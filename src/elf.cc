@@ -5,6 +5,7 @@
 #include <stdexcept>
 
 /*
+ *  Performs a lot of checking/cleaning of pages.
  *  Linkers often times overlap pages in the elf binary. This makes our job
  *  much more difficult. To deal with this, we make sure pages don't overlap.
  *  Pages must, by spec, be given in increasing order of virtual address, which
@@ -12,11 +13,9 @@
  */
 std::map <uint64_t, Page *> Elf :: discrete_pages (std::map <uint64_t, Page *> pages)
 {
-	std::map <uint64_t, Page *> :: iterator it;
-	std::map <uint64_t, Page *> :: iterator next;
-
-	it = pages.begin();
-	next = it; next++;
+	// no overlapping pages
+	std::map <uint64_t, Page *> :: iterator it = pages.begin();
+	std::map <uint64_t, Page *> :: iterator next = it; next++;
 	while (next != pages.end()) {
 		// this page overflows in to the next page
 		if (it->first + it->second->g_size() > next->first) {
@@ -37,6 +36,11 @@ std::map <uint64_t, Page *> Elf :: discrete_pages (std::map <uint64_t, Page *> p
 		}
 		it++;
 		next++;
+	}
+
+	// no empty pages
+	for (it = pages.begin(); it != pages.end(); it++) {
+		if (it->second->g_size() == 0) it = pages.erase(it);
 	}
 
 	return pages;
