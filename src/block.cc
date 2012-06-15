@@ -70,10 +70,13 @@ std::list <uint64_t> Blocks :: find_block_beginnings (std::list <Instruction *> 
     
     // bounds check
     std::list <uint64_t> :: iterator sit;
-    for (sit = start_points.begin(); sit != start_points.end(); sit++) {
-        while ((*sit < lower_bound) || (*sit > upper_bound)) {
+    for (sit = start_points.begin(); sit != start_points.end();) {
+		std::cout << *sit << std::endl;
+        if ((*sit < lower_bound) || (*sit > upper_bound)) {
+			std::cout << "eliminating " << *sit << std::endl;
             sit = start_points.erase(sit);
         }
+        else sit++;
     }
     
     return start_points;
