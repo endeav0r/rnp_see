@@ -17,7 +17,6 @@
 #define OPTYPE_INVALID  0
 #define OPTYPE_VAR      1
 #define OPTYPE_CONSTANT 2
-#define OPTYPE_TMPVAR   3
 #define OPTYPE_SIGNED   8
 
 
@@ -48,6 +47,7 @@ class InstructionOperand {
         void setid ();
     public :
         InstructionOperand () : id(0), type(OPTYPE_INVALID), bits(0), value(0) {}
+        InstructionOperand (int type, int bits, uint64_t value, std::string name);
         InstructionOperand (int type, int bits, uint64_t value);
         InstructionOperand (int type, int bits);
         InstructionOperand (int type, int bits, std::string name);
@@ -59,6 +59,8 @@ class InstructionOperand {
         std::string g_name  () { return name; }
         std::string s_name  (std::string name) { return this->name = name; }
         uint64_t    g_id    () { return id; }
+
+        static uint64_t str_to_id (std::string);
         
         std::string to_str ();
         

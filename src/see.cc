@@ -8,11 +8,9 @@
 
 #include <udis86.h>
 
-/*
 #include "block.h"
 #include "instruction.h"
-#include "translate.h"
-*/
+#include "translator.h"
 
 #include "vm.h"
 
@@ -51,8 +49,19 @@ int main (int argc, char * argv[])
 
     VM vm(buf, filesize);
 
-    /*
+    vm.debug_x86_registers();
     
+    std::cout << std::endl;
+
+    vm.step();
+    vm.step();
+    vm.step();
+
+    std::cout << std::endl;
+    
+    vm.debug_x86_registers();
+
+    /*
     Translator translator;
     
     std::list <Instruction *> instructions = translator.translate(0, buf, filesize);
@@ -88,7 +97,6 @@ int main (int argc, char * argv[])
         }
         std::cout << std::endl;
     }
-
     */
     
     return 0;

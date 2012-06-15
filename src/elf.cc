@@ -4,6 +4,8 @@
 #include <iostream>
 #include <stdexcept>
 
+#include "instruction.h"
+
 /*
  *  Performs a lot of checking/cleaning of pages.
  *  Linkers often times overlap pages in the elf binary. This makes our job
@@ -11,7 +13,7 @@
  *  Pages must, by spec, be given in increasing order of virtual address, which
  *  makes our job a lot easier.
  */
-std::map <uint64_t, Page *> Elf :: discrete_pages (std::map <uint64_t, Page *> pages)
+std::map <uint64_t, Page *> Elf :: fix_pages (std::map <uint64_t, Page *> pages)
 {
 	// no overlapping pages
 	std::map <uint64_t, Page *> :: iterator it = pages.begin();
@@ -77,6 +79,12 @@ Elf * Elf :: Get (const uint8_t * data, size_t data_size)
     return NULL;
 }
 
+
+/**************
+ * Elf32      *
+ *************/
+
+
 Elf32 :: Elf32 (const uint8_t * data, size_t data_size) : Elf(data, data_size)
 {
 	ehdr = (const Elf32_Ehdr *) this->data;
@@ -99,8 +107,25 @@ std::map <uint64_t, Page *> Elf32 :: g_pages ()
 		delete tmp;
 	}
 
-	return discrete_pages(pages);
+	// make a page for the stack
+	pages[ELF32_STACK_BEGIN] = new Page(ELF32_STACK_SIZE);
+
+	return fix_pages(pages);
 }
+
+std::map <uint64_t, SymbolicValue> Elf32 :: g_variables ()
+{
+	std::map <uint64_t, SymbolicValue> variables;
+
+	return variables;
+}
+
+uint64_t Elf32 :: g_ip_id () { return 0; }
+
+
+/**************
+ * Elf64      *
+ *************/
 
 
 Elf64 :: Elf64 (const uint8_t * data, size_t data_size) : Elf(data, data_size)
@@ -109,7 +134,6 @@ Elf64 :: Elf64 (const uint8_t * data, size_t data_size) : Elf(data, data_size)
 }
 
 uint64_t Elf64 :: g_entry () { return ehdr->e_entry; }
-
 
 std::map <uint64_t, Page *> Elf64 :: g_pages ()
 {
@@ -126,5 +150,37 @@ std::map <uint64_t, Page *> Elf64 :: g_pages ()
 		delete tmp;
 	}
 
-	return discrete_pages(pages);
+	// make a page for the stack
+	pages[ELF64_STACK_BEGIN] = new Page(ELF64_STACK_SIZE);
+
+	return fix_pages(pages);
 }
+
+
+std::map <uint64_t, SymbolicValue> Elf64 :: g_variables ()
+{
+	std::map <uint64_t, SymbolicValue> variables;
+
+	variables[InstructionOperand::str_to_id("UD_R_RAX")] = SymbolicValue(64, 0);
+	variables[InstructionOperand::str_to_id("UD_R_RBX")] = SymbolicValue(64, 0);
+	variables[InstructionOperand::str_to_id("UD_R_RCX")] = SymbolicValue(64, 0);
+	variables[InstructionOperand::str_to_id("UD_R_RDX")] = SymbolicValue(64, 0);
+	variables[InstructionOperand::str_to_id("UD_R_RSI")] = SymbolicValue(64, 0);
+	variables[InstructionOperand::str_to_id("UD_R_RDI")] = SymbolicValue(64, 0);
+	variables[InstructionOperand::str_to_id("UD_R_R8")]  = SymbolicValue(64, 0);
+	variables[InstructionOperand::str_to_id("UD_R_R9")]  = SymbolicValue(64, 0);
+	variables[InstructionOperand::str_to_id("UD_R_R10")] = SymbolicValue(64, 0);
+	variables[InstructionOperand::str_to_id("UD_R_R11")] = SymbolicValue(64, 0);
+	variables[InstructionOperand::str_to_id("UD_R_R12")] = SymbolicValue(64, 0);
+	variables[InstructionOperand::str_to_id("UD_R_R13")] = SymbolicValue(64, 0);
+	variables[InstructionOperand::str_to_id("UD_R_R14")] = SymbolicValue(64, 0);
+	variables[InstructionOperand::str_to_id("UD_R_R15")] = SymbolicValue(64, 0);
+
+	uint64_t RSP = ELF64_STACK_BEGIN + ELF64_STACK_SIZE - 0x100;
+	variables[InstructionOperand::str_to_id("UD_R_RSP")] = SymbolicValue(64, RSP);
+	variables[InstructionOperand::str_to_id("UD_R_RBP")] = SymbolicValue(64, RSP + 20);
+	variables[InstructionOperand::str_to_id("UD_R_RIP")] = SymbolicValue(64, g_entry());
+	return variables;
+}
+
+uint64_t Elf64 :: g_ip_id () { return InstructionOperand::str_to_id("UD_R_RIP"); }

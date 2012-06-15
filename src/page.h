@@ -15,6 +15,7 @@ class Page {
         void check_offset (size_t offset);
         
     public :
+        Page (size_t size);
         Page (size_t size, uint8_t * data);
         
         void destroy ();

@@ -32,13 +32,13 @@ void InstructionOperand :: sign ()
 
 void InstructionOperand :: setid ()
 {
-    if      (type == OPTYPE_VAR) id = value;
-    else if ((type == OPTYPE_TMPVAR) && (name != "")) {
-        id = 0;
-        for (size_t i = 0; i < name.length(); i++) {
-            id += (int) name[i] << (8 * (i % 8));
-        }
+    // variables with names get an identifier based on their name
+    // with some special sauce to prevent identifical identifiers
+    if ((type == OPTYPE_VAR) && (name != "")) {
+        id = str_to_id(name);
     }
+
+    // otherwise the variable gets a unique identifier
     else {
         InstructionOperandTmpVar & tmpvar = InstructionOperandTmpVar :: get();
         id = tmpvar.next();
@@ -46,7 +46,7 @@ void InstructionOperand :: setid ()
 }
 
 InstructionOperand :: InstructionOperand (int type, int bits, uint64_t value)
-    : type(type), bits(bits), value(value)
+    : type(type), bits(bits), value(value), name("")
 {
     setid();
 
@@ -64,10 +64,10 @@ InstructionOperand :: InstructionOperand (int type, int bits, std::string name)
 }
 
 InstructionOperand :: InstructionOperand (int type, int bits)
-    : type(type), bits(bits), value(0)
+    : type(type), bits(bits), value(0), name("")
 {
-    if (type != OPTYPE_TMPVAR)
-        throw std::runtime_error("InstructionOperand expected OPTYPE_TMPVAR");
+    if (type != OPTYPE_VAR)
+        throw std::runtime_error("InstructionOperand expected OPTYPE_VAR");
     
     setid();
 }
@@ -79,28 +79,31 @@ std::string InstructionOperand :: to_str ()
     
     ss << "(";
     switch (this->type & 0x7) {
-    case OPTYPE_VAR      :
-        ss << "VAR " << this->bits << " ";
-        if (this->name != "")
-            ss << this->name;
-        else
-            ss << ud_type_DEBUG[this->value];
-         ss << ")";
-        return ss.str();
     case OPTYPE_CONSTANT :
-        ss << "CONST ";
+        ss << "CONST " << this->bits << " "
+           << "0x" << std::hex << this->value << ")";
         break;
-    case OPTYPE_TMPVAR   :
-        ss << "TMP " << this->bits << " ";
+    case OPTYPE_VAR   :
+        ss << "VAR " << this->bits << " ";
         if (this->name != "") ss << this->name;
         else ss << this->id;
         ss << ")";
             return ss.str();
     }
     
-    ss << this->bits << " 0x" << std::hex << this->value << ")";
-    
     return ss.str();
+}
+
+
+uint64_t InstructionOperand :: str_to_id (std::string str)
+{
+    uint64_t id = 0x01234567;
+    id <<= 32;
+    id |= 0xfcedba98;
+    for (size_t i = 0; i < str.length(); i++) {
+        id += (int) str[i] << (8 * (i % 8));
+    }
+    return id;
 }
 
 

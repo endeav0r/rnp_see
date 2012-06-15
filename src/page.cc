@@ -4,6 +4,14 @@
 #include <sstream>
 #include <stdexcept>
 
+Page :: Page (size_t size)
+{
+    this->size = size;
+    this->data = new uint8_t [size];
+    this->parent = NULL;
+    this->references = 1;
+}
+
 Page :: Page (size_t size, uint8_t * data)
 {
     this->size = size;
@@ -41,6 +49,9 @@ void Page :: set_parent (Page * parent)
 void Page :: resize (size_t new_size)
 {
     uint8_t * new_data = new uint8_t[new_size];
+    memset(new_data, 0, new_size);
+    size_t copy_size = new_size < size ? new_size : size;
+    memcpy(new_data, data, copy_size);
     delete data;
     data = new_data;
     size = new_size;

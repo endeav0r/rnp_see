@@ -7,17 +7,19 @@
 
 class SymbolicValue {
     public :
-        std::string name;
         int         bits;
         uint64_t    value;
         bool        wild; // all values possible
     
-        SymbolicValue (std::string name, int bits, uint64_t value)
-            : name(name), bits(bits), value(value), wild(false) {}
-        SymbolicValue (std::string name, int bits)
-            : name(name), bits(bits), value(0), wild(true) {}
+        SymbolicValue () : bits(0), value(0), wild(false) {}
+        SymbolicValue (int bits, uint64_t value)
+         : bits(bits), value(value), wild(false) {}
+        SymbolicValue (int bits)
+         : bits(bits), value(0), wild(true) {}
         
-        std::string to_str ();
+        std::string to_str  ();
+        uint64_t    g_value () { return value; }
+        int         g_bits  () { return bits;  }
 };
 
 class SymbolicValueBinOp : public SymbolicValue {
@@ -25,16 +27,14 @@ class SymbolicValueBinOp : public SymbolicValue {
         SymbolicValue & left;
         SymbolicValue & right;
     public :
-        SymbolicValueBinOp (std::string name, int bits, SymbolicValue & left, SymbolicValue & right)
-            : SymbolicValue(name, bits), left(left), right(right) {}
-        SymbolicValueBinOp (SymbolicValue & left, SymbolicValue & right)
-            : SymbolicValue("", 64), left(left), right(right) {}
+        SymbolicValueBinOp (int bits, SymbolicValue & left, SymbolicValue & right)
+         : SymbolicValue(bits), left(left), right(right) {}
 };
 
 class SymbolicValueAnd         : public SymbolicValueBinOp {
     public :
         SymbolicValueAnd (SymbolicValue & left, SymbolicValue & right)
-            : SymbolicValueBinOp("and", 64, left, right) {}
+            : SymbolicValueBinOp(64, left, right) {}
 };
 
 class SymbolicValueOr          : public SymbolicValueBinOp {};
@@ -42,7 +42,7 @@ class SymbolicValueXor         : public SymbolicValueBinOp {};
 class SymbolicValueShl         : public SymbolicValueBinOp {
     public :
         SymbolicValueShl (SymbolicValue & left, SymbolicValue & right)
-            : SymbolicValueBinOp(left, right) {}
+            : SymbolicValueBinOp(64, left, right) {}
 };
 class SymbolicValueLessThan    : public SymbolicValueBinOp {};
 class SymbolicValueGreaterThan : public SymbolicValueBinOp {};

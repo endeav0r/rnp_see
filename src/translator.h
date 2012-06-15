@@ -17,8 +17,10 @@ class Translator {
     
     public :
         std::list <Instruction *> translate (uint64_t address, uint8_t * data, size_t size);
+        std::list <Instruction *> translate_all (uint64_t address, uint8_t * data, size_t size);
         
         int register_bits (int reg);
+        int register_to64 (int reg);
         
         uint64_t           operand_lval (int bits, struct ud_operand operand);
         void               operand_set (ud_t * ud_obj, int operand_i, uint64_t address, InstructionOperand & value);
