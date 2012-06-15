@@ -6,9 +6,15 @@
 #include <inttypes.h>
 #include <stdio.h>
 
+#include <udis86.h>
+
+/*
 #include "block.h"
 #include "instruction.h"
 #include "translate.h"
+*/
+
+#include "vm.h"
 
 std::string ud_disassemble_at_address (unsigned char * data)
 {
@@ -42,6 +48,10 @@ int main (int argc, char * argv[])
     fread(buf, 1, filesize, fh);
     
     fclose(fh);
+
+    VM vm(buf, filesize);
+
+    /*
     
     Translator translator;
     
@@ -78,6 +88,8 @@ int main (int argc, char * argv[])
         }
         std::cout << std::endl;
     }
+
+    */
     
     return 0;
 }

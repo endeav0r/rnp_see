@@ -1,10 +1,9 @@
 #!/usr/bin/lua
 
-require('lfs')
+--require('lfs')
 
 CPP   = 'g++'
-FLAGS = '-Wall -Wno-switch -g --std=c++11'
-
+FLAGS = '-Wall -Wno-switch -g --std=c++0x'
 COMPILE = CPP .. ' ' .. FLAGS .. ' -c '
 
 function execute_try (command)
@@ -62,8 +61,8 @@ function do_config ()
     fh:close()
 end
 
-deps = {'block', 'debug', 'instruction', 'memory', 'page',
-        'registers', 'symbolicvalue', 'system', 'translate'}
+deps = {'block', 'debug', 'elf', 'instruction', 'memory', 'page',
+        'registers', 'symbolicvalue', 'system', 'translator', 'vm'}
 dep_objs = {}
 
 for di, dep in pairs(deps) do
@@ -73,4 +72,4 @@ for di, dep in pairs(deps) do
     table.insert(dep_objs, 'src/' .. dep .. '.o')
 end
 
-execute(CPP .. " " .. FLAGS .. " -ludis86 -o see src/see.cc " .. table.concat(dep_objs, " "))
+execute(CPP .. " " .. FLAGS .. " -o see -L/usr/local/lib src/see.cc " .. table.concat(dep_objs, " ") .. " -ludis86")

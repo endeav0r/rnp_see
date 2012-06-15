@@ -1,4 +1,4 @@
-#include "translate.h"
+#include "translator.h"
 
 #include <udis86.h>
 

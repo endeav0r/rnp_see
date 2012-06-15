@@ -1,8 +1,6 @@
 #ifndef page_HEADER
 #define page_HEADER
 
-#define PAGE_SIZE 4096
-
 #include <inttypes.h>
 #include <cstddef>
 
@@ -15,16 +13,22 @@ class Page {
         int references;
         
     public :
-        Page (size_t size);
+        Page (size_t size, uint8_t * data);
         
         void destroy ();
         
         void set_parent (Page * parent);
         
-        uint8_t  g_byte  (size_t offset);
-        uint16_t g_word  (size_t offset);
-        uint32_t g_dword (size_t offset);
-        uint64_t g_qword (size_t offset);
+        void resize (size_t new_size);
+
+        size_t   g_size  ();
+
+        uint8_t * g_data  (size_t offset);
+        
+        uint8_t   g_byte  (size_t offset);
+        uint16_t  g_word  (size_t offset);
+        uint32_t  g_dword (size_t offset);
+        uint64_t  g_qword (size_t offset);
         
         void s_byte  (size_t offset, uint8_t  value);
         void s_word  (size_t offset, uint16_t value);
