@@ -23,12 +23,14 @@ std::map <uint64_t, Page *> Elf :: discrete_pages (std::map <uint64_t, Page *> p
 			// the next page
 			if (it->first + it->second->g_size() > next->first + next->second->g_size()) {
 				uint64_t nnext = next->first + next->second->g_size();
-				while (pages.count(nnext) > 0) nnext += pages[nnext]->g_size();
+				while (pages.count(nnext) > 0) {
+					nnext += pages[nnext]->g_size();
+				}
 				// make sure we still overlap
 				if (it->first + it->second->g_size() > nnext) {
-					size_t new_offset = nnext - next->first;
-					size_t new_size   = next->second->g_size() - new_offset;
-					pages[nnext] = new Page(new_size, next->second->g_data(new_offset));
+					size_t new_offset = nnext - it->first;
+					size_t new_size   = it->second->g_size() - new_offset;
+					pages[nnext] = new Page(new_size, it->second->g_data(new_offset));
 				}
 			}
 			// now resize the page so it doesn't overlap
@@ -88,6 +90,7 @@ std::map <uint64_t, Page *> Elf32 :: g_pages ()
 
 	for (int i = 0; i < ehdr->e_phnum; i++) {
 		const Elf32_Phdr * phdr = (const Elf32_Phdr *) &(data[ehdr->e_phoff + (ehdr->e_phentsize * i)]);
+		if (phdr->p_type == PT_NULL) continue;
 		// temporarily allocate space to store the page data
 		uint8_t * tmp = new uint8_t[phdr->p_memsz];
 		memset(tmp, 0, phdr->p_memsz);
@@ -114,6 +117,7 @@ std::map <uint64_t, Page *> Elf64 :: g_pages ()
 
 	for (int i = 0; i < ehdr->e_phnum; i++) {
 		const Elf64_Phdr * phdr = (const Elf64_Phdr *) &(data[ehdr->e_phoff + (ehdr->e_phentsize * i)]);
+		if (phdr->p_type == PT_NULL) continue;
 		// temporarily allocate space to store the page data
 		uint8_t * tmp = new uint8_t[phdr->p_memsz];
 		memset(tmp, 0, phdr->p_memsz);

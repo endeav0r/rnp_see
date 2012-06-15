@@ -12,6 +12,8 @@ class Page {
         
         int references;
         
+        void check_offset (size_t offset);
+        
     public :
         Page (size_t size, uint8_t * data);
         

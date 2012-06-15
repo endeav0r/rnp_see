@@ -1,6 +1,7 @@
 #include "page.h"
 
 #include <cstring>
+#include <sstream>
 #include <stdexcept>
 
 Page :: Page (size_t size, uint8_t * data)
@@ -22,6 +23,16 @@ void Page :: destroy ()
     }
 }
 
+void Page :: check_offset (size_t offset)
+{
+	if (offset > this->size) {
+		std::stringstream ss;
+		ss << "invalid offset " << offset << " (size is " << size << ")";
+		throw std::out_of_range(ss.str());
+	}
+}
+		
+
 void Page :: set_parent (Page * parent)
 {
     this->parent = parent;
@@ -39,54 +50,54 @@ size_t Page :: g_size () { return this->size; }
 
 uint8_t Page :: g_byte (size_t offset)
 {
-    if (offset >= this->size) throw std::out_of_range("");
+    check_offset(offset);
     return this->data[offset];
 }
 
 uint8_t * Page :: g_data (size_t offset)
 {
-    if (offset >= this->size) throw std::out_of_range("");
+    check_offset(offset);
     return &(this->data[offset]);
 }
 
 uint16_t Page :: g_word (size_t offset)
 {
-    if (offset >= this->size) throw std::out_of_range("");
+    check_offset(offset);
     return *((uint16_t *) &(this->data[offset]));
 }
 
 uint32_t Page :: g_dword (size_t offset)
 {
-    if (offset >= this->size) throw std::out_of_range("");
+    check_offset(offset);
     return *((uint32_t *) &(this->data[offset]));
 }
 
 uint64_t Page :: g_qword (size_t offset)
 {
-    if (offset >= this->size) throw std::out_of_range("");
+    check_offset(offset);
     return *((uint64_t *) &(this->data[offset]));
 }
 
 void Page :: s_byte (size_t offset, uint8_t value)
 {
-    if (offset >= this->size) throw std::out_of_range("");
+    check_offset(offset);
     this->data[offset] = value;
 }
 
 void Page :: s_word (size_t offset, uint16_t value)
 {
-    if (offset >= this->size) throw std::out_of_range("");
+    check_offset(offset);
     *((uint16_t *) &(this->data[offset])) = value;
 }
 
 void Page :: s_dword (size_t offset, uint32_t value)
 {
-    if (offset >= this->size) throw std::out_of_range("");
+    check_offset(offset);
     *((uint32_t *) &(this->data[offset])) = value;
 }
 
 void Page :: s_qword (size_t offset, uint64_t value)
 {
-    if (offset >= this->size) throw std::out_of_range("");
+    check_offset(offset);
     *((uint64_t *) &(this->data[offset])) = value;
 }
