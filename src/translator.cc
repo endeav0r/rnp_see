@@ -74,7 +74,7 @@ std::list <Instruction *> Translator :: translate (uint64_t address, uint8_t * d
             <<  ud_insn_asm(&ud_obj) << "]"
             << " " << ins_debug_str(&ud_obj);
             std::cerr << ss.str() << std::endl;
-            //throw std::runtime_error(ss.str());
+            throw std::runtime_error(ss.str());
         }
     }
     
@@ -353,8 +353,20 @@ void Translator :: And (ud_t * ud_obj, uint64_t address)
 
 void Translator :: call (ud_t * ud_obj, uint64_t address)
 {
+    
+    InstructionOperand rip     = InstructionOperand(OPTYPE_VAR, 64, "UD_R_RIP");
+    InstructionOperand rsp     = InstructionOperand(OPTYPE_VAR, 64, "UD_R_RSP");
+    InstructionOperand subsize = InstructionOperand(OPTYPE_CONSTANT, 8, STACK_ELEMENT_SIZE);
+    
+    // push RIP
+    instructions.push_back(new InstructionSub(address, ud_insn_len(ud_obj), rsp, rsp, subsize));
+    instructions.push_back(new InstructionStore(address, ud_insn_len(ud_obj), 64, rsp, rip));
+
+    // set RIP += offset
     InstructionOperand dst = operand_get(ud_obj, 0, address);
-    instructions.push_back(new InstructionCall(address, ud_insn_len(ud_obj), dst));
+    InstructionOperand off = InstructionOperand(OPTYPE_VAR, 64);
+    instructions.push_back(new InstructionSignExtend(address, ud_insn_len(ud_obj), off, dst));
+    instructions.push_back(new InstructionAdd(address, ud_insn_len(ud_obj), rip, rip, off));
 }
 
 

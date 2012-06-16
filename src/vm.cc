@@ -104,7 +104,7 @@ void VM :: step ()
         else throw std::runtime_error("unimplemented instruction: " + (*it)->str());
     }
 
-    variables[ip_id] = SymbolicValue(64, ip_addr + instruction_size);
+    variables[ip_id] = variables[ip_id] + SymbolicValue(64, instruction_size);
 }
 
 
