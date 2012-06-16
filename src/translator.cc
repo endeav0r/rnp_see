@@ -173,9 +173,10 @@ int Translator :: register_to64 (int reg)
         return reg + (UD_R_RAX - UD_R_EAX);
     else if ((reg >= UD_R_RAX) && (reg <= UD_R_R15))
         return reg;
+    else if (reg == UD_R_RIP) return reg;
 
     throw std::runtime_error(std::string("")
-                             + "register_to64 called on unsupported register" 
+                             + "register_to64 called on unsupported register: " 
                              + ud_type_DEBUG[reg]);
     return -1;
 }
@@ -321,8 +322,10 @@ void Translator :: add (ud_t * ud_obj, uint64_t address)
 
 void Translator :: And (ud_t * ud_obj, uint64_t address)
 {
-    InstructionOperand lhs = operand_get(ud_obj, 0, address);
-    InstructionOperand rhs = operand_get(ud_obj, 1, address);
+    size_t size = ud_insn_len(ud_obj);
+
+    InstructionOperand lhs  = operand_get(ud_obj, 0, address);
+    InstructionOperand rhs  = operand_get(ud_obj, 1, address);
     InstructionOperand tmp (OPTYPE_VAR, lhs.g_bits());
     
     InstructionOperand OF   (OPTYPE_VAR, 1, "OF"); // signed overflow
@@ -330,13 +333,20 @@ void Translator :: And (ud_t * ud_obj, uint64_t address)
     InstructionOperand ZF   (OPTYPE_VAR, 1, "ZF");
     InstructionOperand SF   (OPTYPE_VAR, 1, "SF"); // "negative" flag
     InstructionOperand zero (OPTYPE_CONSTANT, tmp.g_bits(), 0);
+
+    // 8-bit immediates are always sign extended
+    if ((ud_obj->operand[1].type == UD_OP_IMM) && (rhs.g_bits() == 8)) {
+        InstructionOperand rhs_old = rhs;
+        rhs = InstructionOperand(OPTYPE_VAR, 64);
+        instructions.push_back(new InstructionSignExtend(address, size, rhs, rhs_old));
+    }
     
-    instructions.push_back(new InstructionAnd(address, ud_insn_len(ud_obj), tmp, lhs, rhs));
+    instructions.push_back(new InstructionAnd(address, size, tmp, lhs, rhs));
     
-    instructions.push_back(new InstructionAssign(address, ud_insn_len(ud_obj), OF, zero));
-    instructions.push_back(new InstructionAssign(address, ud_insn_len(ud_obj), CF, zero));
-    instructions.push_back(new InstructionCmpEq (address, ud_insn_len(ud_obj), ZF, tmp, zero));
-    instructions.push_back(new InstructionCmpLts(address, ud_insn_len(ud_obj), SF, tmp, zero));
+    instructions.push_back(new InstructionAssign(address, size, OF, zero));
+    instructions.push_back(new InstructionAssign(address, size, CF, zero));
+    instructions.push_back(new InstructionCmpEq (address, size, ZF, tmp, zero));
+    instructions.push_back(new InstructionCmpLts(address, size, SF, tmp, zero));
     
     operand_set(ud_obj, 0, address, tmp);
 }

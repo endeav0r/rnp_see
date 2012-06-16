@@ -7,156 +7,182 @@
 
 void VM :: debug_x86_registers ()
 {
-	std::stringstream ss;
+    std::stringstream ss;
 
-	#define GVALUE(XX) variables[InstructionOperand::str_to_id(XX)].g_value()
-	#define PRINTREG(XX) << XX << "=" \
-					     << std::hex << GVALUE(XX) << std::endl
+    #define GVALUE(XX) variables[InstructionOperand::str_to_id(XX)].str()
+    #define PRINTREG(XX) << XX << "=" \
+                         << std::hex << GVALUE(XX) << std::endl
     
     ss PRINTREG("UD_R_RAX") PRINTREG("UD_R_RBX")
-	   PRINTREG("UD_R_RCX") PRINTREG("UD_R_RDX")
-	   PRINTREG("UD_R_RDI") PRINTREG("UD_R_RSI")
-	   PRINTREG("UD_R_RBP") PRINTREG("UD_R_RSP")
-	   PRINTREG("UD_R_R8")  PRINTREG("UD_R_R9")
-	   PRINTREG("UD_R_R10") PRINTREG("UD_R_R11") 
-	   PRINTREG("UD_R_R12") PRINTREG("UD_R_R13")
-	   PRINTREG("UD_R_R14") PRINTREG("UD_R_R15")
-	   PRINTREG("UD_R_RIP");
+       PRINTREG("UD_R_RCX") PRINTREG("UD_R_RDX")
+       PRINTREG("UD_R_RDI") PRINTREG("UD_R_RSI")
+       PRINTREG("UD_R_RBP") PRINTREG("UD_R_RSP")
+       PRINTREG("UD_R_R8")  PRINTREG("UD_R_R9")
+       PRINTREG("UD_R_R10") PRINTREG("UD_R_R11") 
+       PRINTREG("UD_R_R12") PRINTREG("UD_R_R13")
+       PRINTREG("UD_R_R14") PRINTREG("UD_R_R15")
+       PRINTREG("UD_R_RIP");
     std::cout << ss.str();
 }
 
 void VM :: debug_variables ()
 {
-	std::stringstream ss;
+    std::stringstream ss;
 
-	std::map <uint64_t, SymbolicValue> :: iterator it;
-	for (it = variables.begin(); it != variables.end(); it++) {
-		ss << std::hex << it->first << "=" 
-		   << std::hex << it->second.g_value() << std::endl;
-	}
+    std::map <uint64_t, SymbolicValue> :: iterator it;
+    for (it = variables.begin(); it != variables.end(); it++) {
+        ss << std::hex << it->first << "=" 
+           << std::hex << it->second.g_value() << std::endl;
+    }
 
-	std::cout << ss.str();
+    std::cout << ss.str();
 }
 
-SymbolicValue VM :: g_value (InstructionOperand operand)
+const SymbolicValue VM :: g_value (InstructionOperand operand)
 {
-	if (operand.g_type() == OPTYPE_CONSTANT)
-		return SymbolicValue(operand.g_bits(), operand.g_value());
+    if (operand.g_type() == OPTYPE_CONSTANT)
+        return SymbolicValue(operand.g_bits(), operand.g_value());
 
-	if (variables.count(operand.g_id()) == 0) {
-		std::cerr << "operand not found" << std::endl;
-		variables[operand.g_id()] = SymbolicValue(operand.g_bits(), operand.g_value());
-	}
-	
-	return variables[operand.g_id()];
+    if (variables.count(operand.g_id()) == 0) {
+        std::cerr << "operand not found" << std::endl;
+        variables[operand.g_id()] = SymbolicValue(operand.g_bits(), operand.g_value());
+    }
+    
+    return variables[operand.g_id()];
 }
 
 // this works like a loader
 VM :: VM (const uint8_t * data, size_t data_size)
 {
-	Elf * elf = Elf :: Get(data, data_size);
+    Elf * elf = Elf :: Get(data, data_size);
 
-	translator = Translator();
-	memory     = Memory(elf->g_pages());
-	variables  = elf->g_variables();
-	ip_id      = elf->g_ip_id();
+    translator = Translator();
+    memory     = Memory(elf->g_pages());
+    variables  = elf->g_variables();
+    ip_id      = elf->g_ip_id();
 
-	delete elf;
+    delete elf;
 
-	std::cout << "Memory mmap: " << std::endl << memory.memmap() << std::endl;
+    std::cout << "Memory mmap: " << std::endl << memory.memmap() << std::endl;
 }
 
 
 void VM :: step ()
 {
-	uint64_t ip_addr = variables[ip_id].g_value();
-	std::list <Instruction *> instructions;
-	instructions = translator.translate(ip_addr,
-										memory.g_data(ip_addr),
-										memory.g_data_size(ip_addr));
+    uint64_t ip_addr = variables[ip_id].g_value();
+    std::list <Instruction *> instructions;
+    instructions = translator.translate(ip_addr,
+                                        memory.g_data(ip_addr),
+                                        memory.g_data_size(ip_addr));
 
-	size_t instruction_size = instructions.front()->g_size();
+    size_t instruction_size = instructions.front()->g_size();
 
-	std::cout << "step IP=" << std::hex << ip_addr
-			  << " INS_SIZE=" << std::hex << instruction_size
-			  << " bytes";
-	for (size_t i = 0; i < instruction_size; i++) {
-		std::cout << " " << std::hex << (int) memory.g_byte(ip_addr + i);
-	}
-	std::cout << std::endl;
+    std::cout << "step IP=" << std::hex << ip_addr
+              << " INS_SIZE=" << std::hex << instruction_size
+              << " bytes";
+    for (size_t i = 0; i < instruction_size; i++) {
+        std::cout << " " << std::hex << (int) memory.g_byte(ip_addr + i);
+    }
+    std::cout << std::endl;
 
-	#define EXECUTE(XX) if (dynamic_cast<XX *>(*it)) \
-							execute(dynamic_cast<XX *>(*it));
+    #define EXECUTE(XX) if (dynamic_cast<XX *>(*it)) \
+                            execute(dynamic_cast<XX *>(*it));
 
-	std::list <Instruction *> :: iterator it;
-	for (it = instructions.begin(); it != instructions.end(); it++) {
-		std::cout << (*it)->to_str() << std::endl;
-		EXECUTE(InstructionAdd);
-		EXECUTE(InstructionAssign);
-		EXECUTE(InstructionLoad);
-		EXECUTE(InstructionXor);
-	}
+    std::list <Instruction *> :: iterator it;
+    for (it = instructions.begin(); it != instructions.end(); it++) {
+        std::cout << (*it)->str() << std::endl;
+             EXECUTE(InstructionAdd)
+        else EXECUTE(InstructionAnd)
+        else EXECUTE(InstructionAssign)
+        else EXECUTE(InstructionCmpEq)
+        else EXECUTE(InstructionCmpLts)
+        else EXECUTE(InstructionLoad)
+        else EXECUTE(InstructionSignExtend)
+        else EXECUTE(InstructionXor)
+        else throw std::runtime_error("unimplemented instruction: " + (*it)->str());
+    }
 
-	variables[ip_id] = SymbolicValue(64, ip_addr + instruction_size);
+    variables[ip_id] = SymbolicValue(64, ip_addr + instruction_size);
 }
 
 
 void VM :: execute (InstructionAdd * add)
 {
-	InstructionOperand dst = add->g_dst();
-	SymbolicValue lhs = g_value(add->g_lhs());
-	SymbolicValue rhs = g_value(add->g_rhs());
+    variables[add->g_dst().g_id()] = g_value(add->g_lhs()) + g_value(add->g_rhs());
+}
 
-	uint64_t result_value = (lhs.g_value() + rhs.g_value());
-	variables[dst.g_id()] = SymbolicValue(dst.g_bits(), result_value);
+
+void VM :: execute (InstructionAnd * And)
+{
+    variables[And->g_dst().g_id()] = g_value(And->g_lhs()) & g_value(And->g_rhs());
 }
 
 
 void VM :: execute (InstructionAssign * assign)
 {
-	InstructionOperand dst = assign->g_dst();
-	SymbolicValue      src = g_value(assign->g_src());
-	variables[dst.g_id()]  = src;
+    InstructionOperand dst  = assign->g_dst();
+    const SymbolicValue src = g_value(assign->g_src());
+    variables[dst.g_id()]   = src;
+}
+
+
+void VM :: execute (InstructionCmpEq * cmpeq)
+{
+    variables[cmpeq->g_dst().g_id()] =    g_value(cmpeq->g_lhs())
+                                       == g_value(cmpeq->g_rhs());
+}
+
+
+void VM :: execute (InstructionCmpLts * cmplts)
+{
+    variables[cmplts->g_dst().g_id()] =    g_value(cmplts->g_lhs())
+                                        == g_value(cmplts->g_rhs());
 }
 
 
 void VM :: execute (InstructionLoad * load)
 {
-	InstructionOperand dst = load->g_dst();
-	SymbolicValue src = g_value(load->g_src());
+    InstructionOperand dst = load->g_dst();
+    const SymbolicValue src = g_value(load->g_src());
 
-	switch (src.g_bits()) {
-	case 8 :
-		variables[dst.g_id()] = SymbolicValue(dst.g_bits(),
-											  memory.g_byte(src.g_value()));
-		break;
-	case 16 :
-		variables[dst.g_id()] = SymbolicValue(dst.g_bits(),
-											  memory.g_word(src.g_value()));
-		break;
-	case 32 :
-		variables[dst.g_id()] = SymbolicValue(dst.g_bits(),
-											  memory.g_dword(src.g_value()));
-		break;
-	case 64 :
-		variables[dst.g_id()] = SymbolicValue(dst.g_bits(),
-											  memory.g_qword(src.g_value()));
-		break;
-	default :
-		std::stringstream ss;
-		ss << "Tried to load invalid bit size: " << src.g_bits();
-		throw std::runtime_error(ss.str());
-	}
+    switch (src.g_bits()) {
+    case 8 :
+        variables[dst.g_id()] = SymbolicValue(dst.g_bits(),
+                                              memory.g_byte(src.g_value()));
+        break;
+    case 16 :
+        variables[dst.g_id()] = SymbolicValue(dst.g_bits(),
+                                              memory.g_word(src.g_value()));
+        break;
+    case 32 :
+        variables[dst.g_id()] = SymbolicValue(dst.g_bits(),
+                                              memory.g_dword(src.g_value()));
+        break;
+    case 64 :
+        variables[dst.g_id()] = SymbolicValue(dst.g_bits(),
+                                              memory.g_qword(src.g_value()));
+        break;
+    default :
+        std::stringstream ss;
+        ss << "Tried to load invalid bit size: " << src.g_bits();
+        throw std::runtime_error(ss.str());
+    }
+}
+
+
+void VM :: execute (InstructionSignExtend * sext)
+{
+    variables[sext->g_dst().g_id()] = g_value(sext->g_src()).signExtend();
 }
 
 
 void VM :: execute (InstructionXor * Xor)
 {
-	InstructionOperand dst = Xor->g_dst();
-	SymbolicValue lhs = g_value(Xor->g_lhs());
-	SymbolicValue rhs = g_value(Xor->g_rhs());
+    InstructionOperand dst = Xor->g_dst();
+    const SymbolicValue lhs = g_value(Xor->g_lhs());
+    const SymbolicValue rhs = g_value(Xor->g_rhs());
 
-	variables[dst.g_id()] = SymbolicValue(dst.g_bits(), lhs.g_value() ^ rhs.g_value());
+    variables[dst.g_id()] = SymbolicValue(dst.g_bits(), lhs.g_value() ^ rhs.g_value());
 }
 
 void VM :: execute (Instruction * ins) {}

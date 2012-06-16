@@ -57,12 +57,11 @@ class InstructionOperand {
         uint64_t    g_value () { return value; }
         int         g_bits  () { return bits; }
         std::string g_name  () { return name; }
-        std::string s_name  (std::string name) { return this->name = name; }
         uint64_t    g_id    () { return id; }
 
         static uint64_t str_to_id (std::string);
         
-        std::string to_str ();
+        std::string str ();
         
         bool operator == (const InstructionOperand & rhs);
 };
@@ -102,7 +101,7 @@ class Instruction {
         }
         virtual ~Instruction() {}
         
-        virtual std::string to_str ();
+        virtual std::string str ();
         std::string str_formatter (std::string mnemonic, std::string args);
         
         uint64_t g_address () { return address; }
@@ -122,7 +121,7 @@ class InstructionLoad : public Instruction {
     public :
         InstructionLoad (uint64_t address, uint32_t size, int bits, InstructionOperand & dst, InstructionOperand & src)
             : Instruction(address, size), bits(bits), dst(dst), src(src) {}
-        std::string to_str();
+        std::string str();
         InstructionOperand g_dst () { return dst; }
         InstructionOperand g_src () { return src; }
 };
@@ -135,7 +134,7 @@ class InstructionStore : public Instruction {
     public :
         InstructionStore (uint64_t address, uint32_t size, int bits, InstructionOperand & dst, InstructionOperand & src)
             : Instruction(address, size), bits(bits), dst(dst), src(src) {}
-        std::string to_str();
+        std::string str();
         InstructionOperand g_dst () { return dst; }
         InstructionOperand g_src () { return src; }
 };
@@ -147,7 +146,7 @@ class InstructionBrc : public Instruction {
     public :
         InstructionBrc (uint64_t address, uint32_t size, InstructionOperand & cond, InstructionOperand & dst)
             : Instruction(address, size), cond(cond), dst(dst) {}
-        std::string to_str();
+        std::string str();
         InstructionOperand g_cond () { return cond; }
         InstructionOperand g_dst  () { return dst; }
 };
@@ -159,7 +158,7 @@ class InstructionAssign : public Instruction {
     public :
         InstructionAssign (uint64_t address, uint32_t size, InstructionOperand & dst, InstructionOperand & src)
             : Instruction(address, size), dst(dst), src(src) {}
-        std::string to_str();
+        std::string str();
         InstructionOperand g_dst () { return dst; }
         InstructionOperand g_src () { return src; }
 };
@@ -170,14 +169,14 @@ class InstructionCall : public Instruction {
         
         InstructionCall (uint64_t address, uint32_t size, InstructionOperand dst)
             : Instruction(address, size), dst(dst) {}
-        std::string to_str ();
+        std::string str ();
 };
 
 class InstructionRet : public Instruction {
     public :
         InstructionRet (uint64_t address, uint32_t size)
             : Instruction(address, size) {}
-        std::string to_str ();
+        std::string str ();
 };
 
 class InstructionNot : public Instruction {
@@ -187,7 +186,7 @@ class InstructionNot : public Instruction {
     public :
         InstructionNot (uint64_t address, uint32_t size, InstructionOperand dst, InstructionOperand src)
             : Instruction(address, size), dst(dst), src(src) {}
-        std::string to_str ();
+        std::string str ();
         InstructionOperand g_dst () { return dst; }
         InstructionOperand g_src () { return src; }
 };
@@ -199,7 +198,7 @@ class InstructionSignExtend : public Instruction {
     public :
         InstructionSignExtend (uint64_t address, uint32_t size, InstructionOperand dst, InstructionOperand src)
             : Instruction(address, size), dst(dst), src(src) {}
-        std::string to_str ();
+        std::string str ();
         InstructionOperand g_dst () { return dst; }
         InstructionOperand g_src () { return src; }
 };
@@ -208,7 +207,7 @@ class InstructionHlt : public Instruction {
     public :
         InstructionHlt (uint64_t address, uint32_t size)
             : Instruction(address, size) {}
-        std::string to_str ();
+        std::string str ();
 };
 
 /********************
@@ -241,28 +240,28 @@ class InstructionBinOp : public InstructionBaseStmt {
         InstructionOperand g_dst () { return dst; }
         InstructionOperand g_lhs () { return lhs; }
         InstructionOperand g_rhs () { return rhs; }
-        std::string binop_to_str (std::string mnemonic, std::string op, std::string dst, std::string lhs, std::string rhs);
+        std::string binop_str (std::string mnemonic, std::string op, std::string dst, std::string lhs, std::string rhs);
 };
 
 class InstructionAdd  : public InstructionBinOp {
     public :
         InstructionAdd (uint64_t address, uint32_t size, InstructionOperand dst, InstructionOperand lhs, InstructionOperand rhs)
             : InstructionBinOp(address, size, dst, lhs, rhs) {}
-        std::string to_str();
+        std::string str();
 };
 
 class InstructionSub  : public InstructionBinOp {
     public :
         InstructionSub (uint64_t address, uint32_t size, InstructionOperand dst, InstructionOperand lhs, InstructionOperand rhs)
             : InstructionBinOp(address, size, dst, lhs, rhs) {}
-        std::string to_str();
+        std::string str();
 };
 
 class InstructionMul  : public InstructionBinOp {
     public :
         InstructionMul (uint64_t address, uint32_t size, InstructionOperand dst, InstructionOperand lhs, InstructionOperand rhs)
             : InstructionBinOp(address, size, dst, lhs, rhs) {}
-        std::string to_str();
+        std::string str();
 };
 
 class InstructionDiv  : public InstructionBinOp {};
@@ -271,13 +270,13 @@ class InstructionShl  : public InstructionBinOp {
     public :
         InstructionShl (uint64_t address, uint32_t size, InstructionOperand dst, InstructionOperand lhs, InstructionOperand rhs)
             : InstructionBinOp(address, size, dst, lhs, rhs) {}
-        std::string to_str();
+        std::string str();
 };
 class InstructionShr  : public InstructionBinOp {
     public :
         InstructionShr (uint64_t address, uint32_t size, InstructionOperand dst, InstructionOperand lhs, InstructionOperand rhs)
             : InstructionBinOp(address, size, dst, lhs, rhs) {}
-        std::string to_str();
+        std::string str();
 };
 class InstructionShrs : public InstructionBinOp {};
 class InstructionMod  : public InstructionBinOp {};
@@ -286,21 +285,21 @@ class InstructionAnd  : public InstructionBinOp {
     public :
         InstructionAnd (uint64_t address, uint32_t size, InstructionOperand dst, InstructionOperand lhs, InstructionOperand rhs)
             : InstructionBinOp(address, size, dst, lhs, rhs) {}
-        std::string to_str();
+        std::string str();
 };
 
 class InstructionOr   : public InstructionBinOp {
     public :
         InstructionOr (uint64_t address, uint32_t size, InstructionOperand dst, InstructionOperand lhs, InstructionOperand rhs)
             : InstructionBinOp(address, size, dst, lhs, rhs) {}
-        std::string to_str();
+        std::string str();
 };
 
 class InstructionXor  : public InstructionBinOp {
     public :
         InstructionXor (uint64_t address, uint32_t size, InstructionOperand dst, InstructionOperand lhs, InstructionOperand rhs)
             : InstructionBinOp(address, size, dst, lhs, rhs) {}
-        std::string to_str();
+        std::string str();
 };
 
 /***********
@@ -319,42 +318,42 @@ class InstructionCmpOp  : public InstructionBaseStmt {
         InstructionOperand g_dst () { return dst; }
         InstructionOperand g_lhs () { return lhs; }
         InstructionOperand g_rhs () { return rhs; }
-        std::string cmpop_to_str (std::string mnemonic, std::string op, std::string dst, std::string lhs, std::string rhs);
+        std::string cmpop_str (std::string mnemonic, std::string op, std::string dst, std::string lhs, std::string rhs);
 };
 
 class InstructionCmpEq  : public InstructionCmpOp {
     public :
         InstructionCmpEq (uint64_t address, uint32_t size, InstructionOperand & dst, InstructionOperand & lhs, InstructionOperand & rhs)
             : InstructionCmpOp(address, size, dst, lhs, rhs) {}
-        std::string to_str();
+        std::string str();
 
 };
 class InstructionCmpLeu : public InstructionCmpOp {
     public :
         InstructionCmpLeu (uint64_t address, uint32_t size, InstructionOperand & dst, InstructionOperand & lhs, InstructionOperand & rhs)
             : InstructionCmpOp(address, size, dst, lhs, rhs) {}
-        std::string to_str();
+        std::string str();
 };
 
 class InstructionCmpLes : public InstructionCmpOp {
     public :
         InstructionCmpLes (uint64_t address, uint32_t size, InstructionOperand & dst, InstructionOperand & lhs, InstructionOperand & rhs)
             : InstructionCmpOp(address, size, dst, lhs, rhs) {}
-        std::string to_str();
+        std::string str();
 };
 
 class InstructionCmpLtu : public InstructionCmpOp {
     public :
         InstructionCmpLtu (uint64_t address, uint32_t size, InstructionOperand & dst, InstructionOperand & lhs, InstructionOperand & rhs)
             : InstructionCmpOp(address, size, dst, lhs, rhs) {}
-        std::string to_str();
+        std::string str();
 };
 
 class InstructionCmpLts : public InstructionCmpOp {
     public :
         InstructionCmpLts (uint64_t address, uint32_t size, InstructionOperand & dst, InstructionOperand & lhs, InstructionOperand & rhs)
             : InstructionCmpOp(address, size, dst, lhs, rhs) {}
-        std::string to_str();
+        std::string str();
 };
 
 

@@ -14,12 +14,16 @@ class VM {
 		uint64_t   ip_id;
 		std::map <uint64_t, SymbolicValue> variables;
 
-		SymbolicValue g_value (InstructionOperand operand);
+		const SymbolicValue g_value (InstructionOperand operand);
 
-		void execute (InstructionAdd    * );
-		void execute (InstructionAssign * );
-		void execute (InstructionLoad *   );
-		void execute (InstructionXor *    );
+		void execute (InstructionAdd    *    );
+		void execute (InstructionAnd    *    );
+		void execute (InstructionAssign *    );
+		void execute (InstructionCmpEq  *    );
+		void execute (InstructionCmpLts *    );
+		void execute (InstructionLoad   *    );
+		void execute (InstructionSignExtend *);
+		void execute (InstructionXor    *    );
 		void execute (Instruction * instruction);
 
 	public :

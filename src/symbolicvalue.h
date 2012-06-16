@@ -6,46 +6,54 @@
 #include <string>
 
 class SymbolicValue {
-    public :
+    protected :
         int         bits;
         uint64_t    value;
         bool        wild; // all values possible
     
+    public :
         SymbolicValue () : bits(0), value(0), wild(false) {}
-        SymbolicValue (int bits, uint64_t value)
-         : bits(bits), value(value), wild(false) {}
-        SymbolicValue (int bits)
-         : bits(bits), value(0), wild(true) {}
+        SymbolicValue (int bits, uint64_t value) : bits(bits), value(value), wild(false) {}
+        SymbolicValue (int bits)                 : bits(bits), value(0),     wild(true) {}
         
-        std::string to_str  ();
-        uint64_t    g_value () { return value; }
-        int         g_bits  () { return bits;  }
+        virtual std::string str () const;
+
+        uint64_t    g_value  () const { return value; }
+        int64_t     g_svalue () const;
+        int         g_bits   () const { return bits;  }
+        bool        g_wild   () const { return wild;  }
+
+        const SymbolicValue operator +  (const SymbolicValue & rhs) const;
+        const SymbolicValue operator &  (const SymbolicValue & rhs) const;
+        const SymbolicValue operator ^  (const SymbolicValue & rhs) const;
+        const SymbolicValue operator == (const SymbolicValue & rhs) const;
+        const SymbolicValue cmpLts      (const SymbolicValue & rhs) const;
+
+        const SymbolicValue signExtend () const;
 };
 
 class SymbolicValueBinOp : public SymbolicValue {
-    private :
-        SymbolicValue & left;
-        SymbolicValue & right;
+    protected :
+        const SymbolicValue lhs;
+        const SymbolicValue rhs;
     public :
-        SymbolicValueBinOp (int bits, SymbolicValue & left, SymbolicValue & right)
-         : SymbolicValue(bits), left(left), right(right) {}
+        SymbolicValueBinOp (const SymbolicValue & lhs, const SymbolicValue & rhs)
+         : lhs(lhs), rhs(rhs) { wild = true; }
 };
 
-class SymbolicValueAnd         : public SymbolicValueBinOp {
-    public :
-        SymbolicValueAnd (SymbolicValue & left, SymbolicValue & right)
-            : SymbolicValueBinOp(64, left, right) {}
+#define SVBINOPCLASS(OPERATION) \
+class SymbolicValue##OPERATION : public SymbolicValueBinOp { \
+    public :                                                 \
+        SymbolicValue##OPERATION (const SymbolicValue & lhs, const SymbolicValue & rhs) \
+            : SymbolicValueBinOp(lhs, rhs) { wild = true;} \
+        std::string str () const; \
 };
 
-class SymbolicValueOr          : public SymbolicValueBinOp {};
-class SymbolicValueXor         : public SymbolicValueBinOp {};
-class SymbolicValueShl         : public SymbolicValueBinOp {
-    public :
-        SymbolicValueShl (SymbolicValue & left, SymbolicValue & right)
-            : SymbolicValueBinOp(64, left, right) {}
-};
-class SymbolicValueLessThan    : public SymbolicValueBinOp {};
-class SymbolicValueGreaterThan : public SymbolicValueBinOp {};
-class SymbolicValueNotEquals   : public SymbolicValueBinOp {};
+
+SVBINOPCLASS(Add)
+SVBINOPCLASS(And)
+SVBINOPCLASS(Xor)
+SVBINOPCLASS(Eq)
+SVBINOPCLASS(CmpLts)
 
 #endif
