@@ -5,15 +5,15 @@
 
 #include <inttypes.h>
 
+#include <udis86.h>
+
 #include "instruction.h"
-#include "system.h"
 
 #define STACK_ELEMENT_SIZE 8
 
 class Translator {
     private :
         std::list <Instruction *> instructions;
-        Registers registers;
     
     public :
         std::list <Instruction *> translate (uint64_t address, uint8_t * data, size_t size);

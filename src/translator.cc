@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <iostream>
 #include <sstream>
+#include <stdexcept>
 
 #include "debug.h"
 
@@ -247,10 +248,10 @@ InstructionOperand Translator :: operand (ud_t * ud_obj, int operand_i, uint64_t
 
         if (operand.base) {
             std::string name = ud_type_DEBUG[register_to64(operand.base)];
-            base = InstructionOperand(OPTYPE_VAR, registers.bits(operand.base), name);
+            base = InstructionOperand(OPTYPE_VAR, register_bits(operand.base), name);
         }
         if (operand.index)  index = InstructionOperand(OPTYPE_VAR,
-                                                       registers.bits(operand.index),
+                                                       register_bits(operand.index),
                                                        operand.index);
         if (operand.scale)  scale = InstructionOperand(OPTYPE_CONSTANT,
                                                        8,
