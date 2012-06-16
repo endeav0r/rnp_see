@@ -24,6 +24,7 @@ class SymbolicValue {
         bool        g_wild   () const { return wild;  }
 
         const SymbolicValue operator +  (const SymbolicValue & rhs) const;
+        const SymbolicValue operator -  (const SymbolicValue & rhs) const;
         const SymbolicValue operator &  (const SymbolicValue & rhs) const;
         const SymbolicValue operator ^  (const SymbolicValue & rhs) const;
         const SymbolicValue operator == (const SymbolicValue & rhs) const;
@@ -52,8 +53,9 @@ class SymbolicValue##OPERATION : public SymbolicValueBinOp { \
 
 SVBINOPCLASS(Add)
 SVBINOPCLASS(And)
-SVBINOPCLASS(Xor)
-SVBINOPCLASS(Eq)
 SVBINOPCLASS(CmpLts)
+SVBINOPCLASS(Eq)
+SVBINOPCLASS(Sub)
+SVBINOPCLASS(Xor)
 
 #endif

@@ -98,6 +98,8 @@ void VM :: step ()
         else EXECUTE(InstructionCmpLts)
         else EXECUTE(InstructionLoad)
         else EXECUTE(InstructionSignExtend)
+        else EXECUTE(InstructionStore)
+        else EXECUTE(InstructionSub)
         else EXECUTE(InstructionXor)
         else throw std::runtime_error("unimplemented instruction: " + (*it)->str());
     }
@@ -173,6 +175,30 @@ void VM :: execute (InstructionLoad * load)
 void VM :: execute (InstructionSignExtend * sext)
 {
     variables[sext->g_dst().g_id()] = g_value(sext->g_src()).signExtend();
+}
+
+
+void VM :: execute (InstructionStore * store)
+{
+    const SymbolicValue dst = g_value(store->g_dst());
+    const SymbolicValue src = g_value(store->g_src());
+
+    switch (store->g_bits()) {
+    case 8  : memory.s_byte(dst.g_value(), src.g_value()); break;
+    case 16 : memory.s_word(dst.g_value(), src.g_value()); break;
+    case 32 : memory.s_dword(dst.g_value(), src.g_value()); break;
+    case 64 : memory.s_qword(dst.g_value(), src.g_value()); break;
+    default :
+        std::stringstream ss;
+        ss << "Tried to store invalid bit size: " << store->g_bits();
+        throw std::runtime_error(ss.str());
+    }
+}
+
+
+void VM :: execute (InstructionSub * sub)
+{
+    variables[sub->g_dst().g_id()] = g_value(sub->g_lhs()) - g_value(sub->g_rhs());
 }
 
 

@@ -32,9 +32,10 @@ std::string CLASS :: str () const \
 
 SVSTR(+,  SymbolicValueAdd)
 SVSTR(&,  SymbolicValueAnd)
-SVSTR(^,  SymbolicValueXor)
-SVSTR(==, SymbolicValueEq)
 SVSTR(<,  SymbolicValueCmpLts)
+SVSTR(==, SymbolicValueEq)
+SVSTR(-,  SymbolicValueSub)
+SVSTR(^,  SymbolicValueXor)
 
 const SymbolicValue SymbolicValue :: signExtend () const
 {
@@ -52,6 +53,7 @@ const SymbolicValue SymbolicValue :: operator OPER (const SymbolicValue & rhs) c
 
 SVOPERATOR(+, SymbolicValueAdd)
 SVOPERATOR(&, SymbolicValueAnd)
+SVOPERATOR(-, SymbolicValueSub)
 SVOPERATOR(^, SymbolicValueXor)
 
 

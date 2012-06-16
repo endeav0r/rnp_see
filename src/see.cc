@@ -57,7 +57,7 @@ int main (int argc, char * argv[])
         
         std::cout << std::endl;
 
-        for (int i = 0; i < 5; i++)
+        for (int i = 0; i < 6; i++)
             vm.step();
 
         std::cout << std::endl;
