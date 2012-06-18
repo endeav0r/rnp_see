@@ -78,6 +78,7 @@ std::list <Instruction *> Translator :: translate (uint64_t address, uint8_t * d
             throw std::runtime_error(ss.str());
         }
     }
+    else throw std::runtime_error("unable to disassemble instruction");
     
     return instructions;
 }
@@ -245,6 +246,7 @@ InstructionOperand Translator :: operand (ud_t * ud_obj, int operand_i, uint64_t
         InstructionOperand index;
         InstructionOperand scale;
         InstructionOperand displ;
+        size_t size = ud_insn_len(ud_obj);
 
         if (operand.base) {
             std::string name = ud_type_DEBUG[register_to64(operand.base)];
@@ -263,20 +265,20 @@ InstructionOperand Translator :: operand (ud_t * ud_obj, int operand_i, uint64_t
         InstructionOperand index_scale = index;
         if (operand.index && operand.scale) {
             index_scale = InstructionOperand(OPTYPE_VAR, 64);
-            instructions.push_back(new InstructionMul(address, 64, index_scale, index, scale));
+            instructions.push_back(new InstructionMul(address, size, index_scale, index, scale));
         }
         
         InstructionOperand base_displacement = base;
         if (operand.base && operand.offset) {
-            base_displacement = InstructionOperand(OPTYPE_VAR, 64);
-            instructions.push_back(new InstructionAdd(address, 64, base_displacement, base, displ));
+            base_displacement = InstructionOperand(OPTYPE_VAR, size);
+            instructions.push_back(new InstructionAdd(address, size, base_displacement, base, displ));
         }
         else if ((! operand.base) && (operand.offset))
             base_displacement = displ;
         
         if (operand.index) {
             InstructionOperand result = InstructionOperand(OPTYPE_VAR, 64);
-            instructions.push_back(new InstructionAdd(address, 64, result, index_scale, base_displacement));
+            instructions.push_back(new InstructionAdd(address, size, result, index_scale, base_displacement));
             return result;
         }
         
