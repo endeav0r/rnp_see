@@ -16,6 +16,7 @@ class Translator {
         std::list <Instruction *> instructions;
     
     public :
+        std::string native_asm (uint8_t * data, int size);
         std::list <Instruction *> translate (uint64_t address, uint8_t * data, size_t size);
         std::list <Instruction *> translate_all (uint64_t address, uint8_t * data, size_t size);
         

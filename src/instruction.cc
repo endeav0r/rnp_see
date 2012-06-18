@@ -97,7 +97,7 @@ std::string InstructionOperand :: str ()
 
 uint64_t InstructionOperand :: str_to_id (std::string str)
 {
-    uint64_t id = 0x01234567;
+    uint64_t id = 1 << 31;
     id <<= 32;
     id |= 0xfcedba98;
     for (size_t i = 0; i < str.length(); i++) {

@@ -30,6 +30,20 @@ std::string ins_debug_str (ud_t * ud_obj)
    return ss.str();
 }
 
+std::string Translator :: native_asm (uint8_t * data, int size)
+{
+    ud_t ud_obj;
+    
+    ud_init(&ud_obj);
+    ud_set_mode(&ud_obj, 64);
+    ud_set_syntax(&ud_obj, UD_SYN_INTEL);
+    
+    ud_set_input_buffer(&ud_obj, (unsigned char *) data, size);
+    ud_disassemble(&ud_obj);
+
+    return ud_insn_asm(&ud_obj);
+}
+
 
 std::list <Instruction *> Translator :: translate (uint64_t address, uint8_t * data, size_t size)
 {
@@ -270,7 +284,7 @@ InstructionOperand Translator :: operand (ud_t * ud_obj, int operand_i, uint64_t
         
         InstructionOperand base_displacement = base;
         if (operand.base && operand.offset) {
-            base_displacement = InstructionOperand(OPTYPE_VAR, size);
+            base_displacement = InstructionOperand(OPTYPE_VAR, register_bits(operand.base));
             instructions.push_back(new InstructionAdd(address, size, base_displacement, base, displ));
         }
         else if ((! operand.base) && (operand.offset))
@@ -423,7 +437,7 @@ void Translator :: ja (ud_t * ud_obj, uint64_t address)
 void Translator :: jl (ud_t * ud_obj, uint64_t address)
 {
     InstructionOperand SFxorOF (OPTYPE_VAR, 1, "SFxorOF");
-    InstructionOperand dst = operand(ud_obj, 0, address);
+    InstructionOperand dst = operand_get(ud_obj, 0, address);
     
     instructions.push_back(new InstructionBrc(address, ud_insn_len(ud_obj), SFxorOF, dst));
 }
@@ -433,8 +447,8 @@ void Translator :: jl (ud_t * ud_obj, uint64_t address)
 // either InstructionBrc or InstructionCall
 void Translator :: jmp (ud_t * ud_obj, uint64_t address)
 {
-    InstructionOperand dst = operand(ud_obj, 0, address);
-    InstructionOperand t (OPTYPE_VAR, 1, 1);
+    InstructionOperand dst = operand_get(ud_obj, 0, address);
+    InstructionOperand t (OPTYPE_CONSTANT, 1, 1);
     
     instructions.push_back(new InstructionBrc(address, ud_insn_len(ud_obj), t, dst));
 }
@@ -442,7 +456,7 @@ void Translator :: jmp (ud_t * ud_obj, uint64_t address)
 
 void Translator :: jnz (ud_t * ud_obj, uint64_t address)
 {
-    InstructionOperand dst = operand(ud_obj, 0, address);
+    InstructionOperand dst = operand_get(ud_obj, 0, address);
     
     InstructionOperand ZF    (OPTYPE_VAR,   1, "ZF");
     InstructionOperand notZF (OPTYPE_VAR,   1, "notZF");
@@ -454,7 +468,7 @@ void Translator :: jnz (ud_t * ud_obj, uint64_t address)
 void Translator :: jz (ud_t * ud_obj, uint64_t address)
 {
     InstructionOperand ZF  (OPTYPE_VAR, 1, "ZF");
-    InstructionOperand dst = operand(ud_obj, 0, address);
+    InstructionOperand dst = operand_get(ud_obj, 0, address);
     
     instructions.push_back(new InstructionBrc(address, ud_insn_len(ud_obj), ZF, dst));
 }

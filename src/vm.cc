@@ -45,8 +45,9 @@ const SymbolicValue VM :: g_value (InstructionOperand operand)
         return SymbolicValue(operand.g_bits(), operand.g_value());
 
     if (variables.count(operand.g_id()) == 0) {
-        std::cerr << "operand not found" << std::endl;
-        variables[operand.g_id()] = SymbolicValue(operand.g_bits(), operand.g_value());
+        std::stringstream ss;
+        ss << "operand not found, id: " << operand.g_id();
+        throw std::runtime_error(ss.str());
     }
     
     return variables[operand.g_id()];
@@ -72,6 +73,7 @@ void VM :: step ()
 {
     uint64_t ip_addr = variables[ip_id].g_value();
     std::list <Instruction *> instructions;
+
     instructions = translator.translate(ip_addr,
                                         memory.g_data(ip_addr),
                                         memory.g_data_size(ip_addr));
@@ -79,8 +81,7 @@ void VM :: step ()
     size_t instruction_size = instructions.front()->g_size();
 
     std::cout << "step IP=" << std::hex << ip_addr
-              << " INS_SIZE=" << std::hex << instruction_size
-              << " bytes";
+             << " " << translator.native_asm((uint8_t *) memory.g_data(ip_addr), instruction_size);
     for (size_t i = 0; i < instruction_size; i++) {
         std::cout << " " << std::hex << (int) memory.g_byte(ip_addr + i);
     }
@@ -95,6 +96,7 @@ void VM :: step ()
              EXECUTE(InstructionAdd)
         else EXECUTE(InstructionAnd)
         else EXECUTE(InstructionAssign)
+        else EXECUTE(InstructionBrc)
         else EXECUTE(InstructionCmpEq)
         else EXECUTE(InstructionCmpLts)
         else EXECUTE(InstructionLoad)
@@ -126,6 +128,17 @@ void VM :: execute (InstructionAssign * assign)
     InstructionOperand dst  = assign->g_dst();
     const SymbolicValue src = g_value(assign->g_src());
     variables[dst.g_id()]   = src;
+}
+
+
+void VM :: execute (InstructionBrc * brc)
+{
+    const SymbolicValue condition = g_value(brc->g_cond());
+    if (condition.g_wild())
+        throw std::runtime_error("symbolic brc not yet supported");
+    else {
+        variables[ip_id] = g_value(brc->g_dst());
+    }
 }
 
 
