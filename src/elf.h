@@ -4,6 +4,7 @@
 #include <elf.h>
 #include <inttypes.h>
 
+#include <list>
 #include <map>
 
 #include "page.h"
@@ -48,6 +49,9 @@ class Elf32 : public Elf {
 class Elf64 : public Elf {
     private :
         const Elf64_Ehdr * ehdr;
+
+        const Elf64_Shdr * g_shdr(int ndx);
+        std::list <std::string> g_dependencies();
     public :
         Elf64 (const uint8_t * data, size_t data_size);
 

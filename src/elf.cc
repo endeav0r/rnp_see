@@ -127,10 +127,64 @@ uint64_t Elf32 :: g_ip_id () { return 0; }
  * Elf64      *
  *************/
 
+const Elf64_Shdr * Elf64 :: g_shdr (int ndx)
+{
+	size_t offset = ehdr->e_shoff + (ehdr->e_shentsize * ndx);
+	return (const Elf64_Shdr *) &(data[offset]);
+}
+
+
+std::list <std::string> Elf64 :: g_dependencies()
+{
+	std::list <std::string> dependencies;
+
+	// find dynamic sections
+	for (int i = 0; i < ehdr->e_shnum; i++) {
+		const Elf64_Shdr * shdr = g_shdr(i);
+		if (shdr->sh_type != SHT_DYNAMIC) continue;
+
+		// find corresponding string table address
+		const Elf64_Shdr * strtab = NULL;
+		for (size_t di = 0; di < shdr->sh_size / shdr->sh_entsize; di++) {
+			const Elf64_Dyn * dyn = (const Elf64_Dyn *)
+									&(data[shdr->sh_offset + shdr->sh_entsize * di]);
+			// found strtab addr
+			if (dyn->d_tag == DT_STRTAB) {
+				// find strtab shdr
+				for (int si = 0; si < ehdr->e_shnum; si++) {
+					const Elf64_Shdr * tmp = g_shdr(si);
+					if (tmp->sh_addr == dyn->d_un.d_ptr) {
+						strtab = tmp;
+						break;
+					}
+				}
+			}
+		}
+
+		if (strtab == NULL) throw std::runtime_error("unable to locate dynamic strtab");
+		// find dynamic NEEDED entries
+		for (size_t di = 0; di < shdr->sh_size / shdr->sh_entsize; di++) {
+			const Elf64_Dyn * dyn = (const Elf64_Dyn *)
+									&(data[shdr->sh_offset + shdr->sh_entsize * di]);
+			if (dyn->d_tag == DT_NEEDED) {
+				dependencies.push_back((const char *) &(data[strtab->sh_offset + dyn->d_un.d_val]));
+			}
+		}
+	}
+
+	return dependencies;
+}
+
 
 Elf64 :: Elf64 (const uint8_t * data, size_t data_size) : Elf(data, data_size)
 {
 	ehdr = (const Elf64_Ehdr *) this->data;
+
+	std::list <std::string> dependencies = g_dependencies();
+	std::list <std::string> :: iterator it;
+	for (it = dependencies.begin(); it != dependencies.end(); it++) {
+		std::cerr << *it << std::endl;
+	}
 }
 
 uint64_t Elf64 :: g_entry () { return ehdr->e_entry; }
