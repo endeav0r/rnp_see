@@ -30,7 +30,7 @@ class VM {
         void execute (Instruction * instruction);
 
     public :
-        VM (const uint8_t * data, size_t data_size);
+        VM (std::string filename);
 
         void step ();
 

@@ -15,7 +15,7 @@ uint64_t Memory :: g_page_address (uint64_t address, int bits)
     }
 
     std::stringstream ss;
-    ss << "memory addressed dereferenced but not paged: 0x" << std::hex << address;
+    ss << "memory address dereferenced but not paged: 0x" << std::hex << address;
     throw std::runtime_error(ss.str());
     
 }

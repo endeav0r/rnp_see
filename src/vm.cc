@@ -6,6 +6,8 @@
 
 #include "elf.h"
 
+#define DEBUG
+
 void VM :: debug_x86_registers ()
 {
     std::stringstream ss;
@@ -54,13 +56,33 @@ const SymbolicValue VM :: g_value (InstructionOperand operand)
 }
 
 // this works like a loader
-VM :: VM (const uint8_t * data, size_t data_size)
+VM :: VM (std::string filename)
 {
-    Elf * elf = Elf :: Get(data, data_size);
+    #ifdef DEBUG
+    std::cerr << "loading ELF" << std::endl;
+    #endif
 
+    Elf * elf = Elf::Get(filename);
+
+
+    #ifdef DEBUG
+    std::cerr << "loading translator" << std::endl;
+    #endif    
     translator = Translator();
-    memory     = Memory(elf->g_pages());
+
+    #ifdef DEBUG
+    std::cerr << "getting memory" << std::endl;
+    #endif
+    memory     = elf->g_memory();
+
+    #ifdef DEBUG
+    std::cerr << "getting variables" << std::endl;
+    #endif
     variables  = elf->g_variables();
+
+    #ifdef DEBUG
+    std::cerr << "getting instruction pointer id" << std::endl;
+    #endif
     ip_id      = elf->g_ip_id();
 
     delete elf;
@@ -87,6 +109,8 @@ void VM :: step ()
     }
     std::cout << std::endl;
 
+    variables[ip_id] = variables[ip_id] + SymbolicValue(64, instruction_size);
+
     #define EXECUTE(XX) if (dynamic_cast<XX *>(*it)) \
                             execute(dynamic_cast<XX *>(*it));
 
@@ -106,8 +130,6 @@ void VM :: step ()
         else EXECUTE(InstructionXor)
         else throw std::runtime_error("unimplemented instruction: " + (*it)->str());
     }
-
-    variables[ip_id] = variables[ip_id] + SymbolicValue(64, instruction_size);
 }
 
 

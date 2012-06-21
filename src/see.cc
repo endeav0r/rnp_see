@@ -30,57 +30,19 @@ std::string ud_disassemble_at_address (unsigned char * data)
 
 
 int main (int argc, char * argv[])
-{   
-    uint8_t * buf;
-    FILE * fh;
-    size_t filesize;
+{
+    VM vm(argv[1]);
+
+    vm.debug_x86_registers();
     
-    fh = fopen(argv[1], "rb");
+    std::cout << std::endl;
+
+    for (int i = 0; i < 15; i++)
+        vm.step();
+
+    std::cout << std::endl;
     
-    fseek(fh, 0, SEEK_END);
-    filesize = ftell(fh);
-    fseek(fh, 0, SEEK_SET);
-    
-    buf = new uint8_t[filesize];
-    
-    fread(buf, 1, filesize, fh);
-    
-    fclose(fh);
+    vm.debug_x86_registers();
 
-    bool RUNVM = true;
-
-    if (RUNVM) {
-
-        VM vm(buf, filesize);
-
-        vm.debug_x86_registers();
-        
-        std::cout << std::endl;
-
-        for (int i = 0; i < 15; i++)
-            vm.step();
-
-        std::cout << std::endl;
-        
-        vm.debug_x86_registers();
-        
-    }
-    else {
-
-        Translator translator;
-        
-        std::list <Instruction *> instructions = translator.translate_all(0, buf, filesize);
-
-        std::list <Instruction *> :: iterator iit;
-        for (iit = instructions.begin(); iit != instructions.end(); iit++) {
-            std::string tmp = (*iit)->str();
-            while (tmp.length() < 74) tmp += " ";
-            tmp += ud_disassemble_at_address(&(buf[(*iit)->g_address()]));
-            std::cout << tmp << std::endl;
-        }
-        std::cout << std::endl;
-
-    }
-    
     return 0;
 }

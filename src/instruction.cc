@@ -86,7 +86,7 @@ std::string InstructionOperand :: str ()
     case OPTYPE_VAR   :
         ss << "VAR " << this->bits << " ";
         if (this->name != "") ss << this->name;
-        else ss << this->id;
+        else ss << std::hex << this->id;
         ss << ")";
             return ss.str();
     }
