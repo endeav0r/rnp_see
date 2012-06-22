@@ -5,6 +5,7 @@
 #include <stdexcept>
 
 #include "elf.h"
+#include "kernel.h"
 
 #define DEBUG
 
@@ -130,6 +131,7 @@ void VM :: step ()
         else EXECUTE(InstructionSignExtend)
         else EXECUTE(InstructionStore)
         else EXECUTE(InstructionSub)
+        else EXECUTE(InstructionSyscall)
         else EXECUTE(InstructionXor)
         else throw std::runtime_error("unimplemented vm instruction: " + (*it)->str());
     }
@@ -255,6 +257,12 @@ void VM :: execute (InstructionStore * store)
 void VM :: execute (InstructionSub * sub)
 {
     variables[sub->g_dst().g_id()] = g_value(sub->g_lhs()) - g_value(sub->g_rhs());
+}
+
+
+void VM :: execute (InstructionSyscall * syscall)
+{
+    kernel.syscall(variables, memory);
 }
 
 

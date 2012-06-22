@@ -8,7 +8,6 @@
 
 #include <udis86.h>
 
-#include "block.h"
 #include "instruction.h"
 #include "translator.h"
 

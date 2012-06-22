@@ -61,8 +61,8 @@ function do_config ()
     fh:close()
 end
 
-deps = {'elf', 'vm', 'symbolicvalue', 'translator',
-        'block', 'debug', 'instruction', 'memory', 'page'}
+deps = {'elf', 'vm', 'symbolicvalue', 'translator', 'kernel',
+        'debug', 'instruction', 'memory', 'page'}
 dep_objs = {}
 
 for di, dep in pairs(deps) do

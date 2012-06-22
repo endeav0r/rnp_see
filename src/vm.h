@@ -1,6 +1,7 @@
 #ifndef vm_HEADER
 #define vm_HEADER
 
+#include "kernel.h"
 #include "memory.h"
 #include "symbolicvalue.h"
 #include "translator.h"
@@ -12,7 +13,9 @@ class VM {
         Translator translator;
         Memory     memory;
         uint64_t   ip_id;
+        Kernel     kernel;
         std::map <uint64_t, SymbolicValue> variables;
+
 
         const SymbolicValue g_value (InstructionOperand operand);
 
@@ -29,6 +32,7 @@ class VM {
         void execute (InstructionSignExtend *);
         void execute (InstructionStore  *    );
         void execute (InstructionSub    *    );
+        void execute (InstructionSyscall *   );
         void execute (InstructionXor    *    );
         void execute (Instruction * instruction);
 

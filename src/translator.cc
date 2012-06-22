@@ -58,30 +58,31 @@ std::list <Instruction *> Translator :: translate (uint64_t address, uint8_t * d
     
     if (ud_disassemble(&ud_obj)) {
         switch (ud_obj.mnemonic) {
-        case UD_Iadd    : add    (&ud_obj, address + ud_insn_off(&ud_obj)); break;
-        case UD_Iand    : And    (&ud_obj, address + ud_insn_off(&ud_obj)); break;
-        case UD_Icall   : call   (&ud_obj, address + ud_insn_off(&ud_obj)); break;
-        case UD_Icmp    : cmp    (&ud_obj, address + ud_insn_off(&ud_obj)); break;
-        case UD_Ihlt    : hlt    (&ud_obj, address + ud_insn_off(&ud_obj)); break;
-        case UD_Ija     : ja     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
-        case UD_Ijl     : jl     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
-        case UD_Ijmp    : jmp    (&ud_obj, address + ud_insn_off(&ud_obj)); break;
-        case UD_Ijnz    : jnz    (&ud_obj, address + ud_insn_off(&ud_obj)); break;
-        case UD_Ijz     : jz     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
-        case UD_Ilea    : lea    (&ud_obj, address + ud_insn_off(&ud_obj)); break;
-        case UD_Ileave  : leave  (&ud_obj, address + ud_insn_off(&ud_obj)); break;
-        case UD_Imov    : mov    (&ud_obj, address + ud_insn_off(&ud_obj)); break;
-        case UD_Imovzx  : movzx  (&ud_obj, address + ud_insn_off(&ud_obj)); break;
-        case UD_Imovsxd : movsxd (&ud_obj, address + ud_insn_off(&ud_obj)); break;
-        case UD_Inop    : nop    (&ud_obj, address + ud_insn_off(&ud_obj)); break;
-        case UD_Ipop    : pop    (&ud_obj, address + ud_insn_off(&ud_obj)); break;
-        case UD_Ipush   : push   (&ud_obj, address + ud_insn_off(&ud_obj)); break;
-        case UD_Iret    : ret    (&ud_obj, address + ud_insn_off(&ud_obj)); break;
-        case UD_Isar    : sar    (&ud_obj, address + ud_insn_off(&ud_obj)); break;
-        case UD_Ishr    : sar    (&ud_obj, address + ud_insn_off(&ud_obj)); break;
-        case UD_Isub    : sub    (&ud_obj, address + ud_insn_off(&ud_obj)); break;
-        case UD_Itest   : test   (&ud_obj, address + ud_insn_off(&ud_obj)); break;
-        case UD_Ixor    : Xor    (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Iadd     : add     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Iand     : And     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Icall    : call    (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Icmp     : cmp     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Ihlt     : hlt     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Ija      : ja      (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Ijl      : jl      (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Ijmp     : jmp     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Ijnz     : jnz     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Ijz      : jz      (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Ilea     : lea     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Ileave   : leave   (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Imov     : mov     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Imovzx   : movzx   (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Imovsxd  : movsxd  (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Inop     : nop     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Ipop     : pop     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Ipush    : push    (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Iret     : ret     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Isar     : sar     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Ishr     : shr     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Isub     : sub     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Isyscall : syscall (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Itest    : test    (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Ixor     : Xor     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
         default :
             std::stringstream ss;
             ss << "unhandled instruction ["
@@ -641,7 +642,16 @@ void Translator :: push (ud_t * ud_obj, uint64_t address)
 
 void Translator :: ret (ud_t * ud_obj, uint64_t address)
 {
-    instructions.push_back(new InstructionRet(address, ud_insn_len(ud_obj)));
+    size_t size = ud_insn_len(ud_obj);
+
+    InstructionOperand one     = InstructionOperand(OPTYPE_CONSTANT, 1, 1);
+    InstructionOperand dst     = InstructionOperand(OPTYPE_VAR, 64);
+    InstructionOperand rsp     = InstructionOperand(OPTYPE_VAR, 64, "UD_R_RSP");
+    InstructionOperand addsize = InstructionOperand(OPTYPE_CONSTANT, 8, STACK_ELEMENT_SIZE);
+
+    instructions.push_back(new InstructionLoad(address, size, 64, dst, rsp));
+    instructions.push_back(new InstructionAdd(address, size, rsp, rsp, addsize));
+    instructions.push_back(new InstructionBrc(address, size, one, dst));
 }
 
 
@@ -726,6 +736,12 @@ void Translator :: shr (ud_t * ud_obj, uint64_t address)
     instructions.push_back(new InstructionCmpEq(address, size, ZF, tmp, zero));
     
     operand_set(ud_obj, 0, address, tmp);
+}
+
+
+void Translator :: syscall (ud_t * ud_obj, uint64_t address)
+{
+    instructions.push_back(new InstructionSyscall(address, ud_insn_len(ud_obj)));
 }
 
 

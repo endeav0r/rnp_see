@@ -137,6 +137,11 @@ std::string Instruction :: str ()
     return str_formatter("???", "");
 }
 
+std::string InstructionSyscall :: str ()
+{
+    return str_formatter("syscall", "");
+}
+
 std::string InstructionAssign :: str ()
 {
     return str_formatter("assign", this->dst.str() + " = " + this->src.str());
@@ -158,11 +163,6 @@ std::string InstructionLoad :: str ()
 std::string InstructionCall :: str ()
 {
     return str_formatter("call", dst.str());
-}
-
-std::string InstructionRet :: str ()
-{
-    return str_formatter("ret", "");
 }
 
 std::string InstructionNot :: str ()

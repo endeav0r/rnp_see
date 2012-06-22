@@ -113,6 +113,13 @@ class Instruction {
  * BASE INSTRUCTIONS *
  ********************/
 
+class InstructionSyscall : public Instruction {
+    public :
+        InstructionSyscall (uint64_t address, uint32_t size)
+            : Instruction(address, size) {}
+        std::string str();
+};
+
 class InstructionLoad : public Instruction {
     private :
         int bits;
@@ -170,13 +177,6 @@ class InstructionCall : public Instruction {
         
         InstructionCall (uint64_t address, uint32_t size, InstructionOperand dst)
             : Instruction(address, size), dst(dst) {}
-        std::string str ();
-};
-
-class InstructionRet : public Instruction {
-    public :
-        InstructionRet (uint64_t address, uint32_t size)
-            : Instruction(address, size) {}
         std::string str ();
 };
 

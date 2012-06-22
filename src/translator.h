@@ -30,30 +30,31 @@ class Translator {
         
         void add_flags (ud_t * ud_obj, uint64_t address);
         
-        void add    (ud_t * ud_obj, uint64_t address);
-        void And    (ud_t * ud_obj, uint64_t address);
-        void call   (ud_t * ud_obj, uint64_t address);
-        void cmp    (ud_t * ud_obj, uint64_t address);
-        void hlt    (ud_t * ud_obj, uint64_t address);
-        void ja     (ud_t * ud_obj, uint64_t address);
-        void jl     (ud_t * ud_obj, uint64_t address);
-        void jmp    (ud_t * ud_obj, uint64_t address);
-        void jnz    (ud_t * ud_obj, uint64_t address);
-        void jz     (ud_t * ud_obj, uint64_t address);
-        void lea    (ud_t * ud_obj, uint64_t address);
-        void leave  (ud_t * ud_obj, uint64_t address);
-        void mov    (ud_t * ud_obj, uint64_t address);
-        void movsxd (ud_t * ud_obj, uint64_t address);
-        void movzx  (ud_t * ud_obj, uint64_t address);
-        void nop    (ud_t * ud_obj, uint64_t address);
-        void pop    (ud_t * ud_obj, uint64_t address);
-        void push   (ud_t * ud_obj, uint64_t address);
-        void ret    (ud_t * ud_obj, uint64_t address);
-        void sar    (ud_t * ud_obj, uint64_t address);
-        void shr    (ud_t * ud_obj, uint64_t address);
-        void sub    (ud_t * ud_obj, uint64_t address);
-        void test   (ud_t * ud_obj, uint64_t address);
-        void Xor    (ud_t * ud_obj, uint64_t address);
+        void add     (ud_t * ud_obj, uint64_t address);
+        void And     (ud_t * ud_obj, uint64_t address);
+        void call    (ud_t * ud_obj, uint64_t address);
+        void cmp     (ud_t * ud_obj, uint64_t address);
+        void hlt     (ud_t * ud_obj, uint64_t address);
+        void ja      (ud_t * ud_obj, uint64_t address);
+        void jl      (ud_t * ud_obj, uint64_t address);
+        void jmp     (ud_t * ud_obj, uint64_t address);
+        void jnz     (ud_t * ud_obj, uint64_t address);
+        void jz      (ud_t * ud_obj, uint64_t address);
+        void lea     (ud_t * ud_obj, uint64_t address);
+        void leave   (ud_t * ud_obj, uint64_t address);
+        void mov     (ud_t * ud_obj, uint64_t address);
+        void movsxd  (ud_t * ud_obj, uint64_t address);
+        void movzx   (ud_t * ud_obj, uint64_t address);
+        void nop     (ud_t * ud_obj, uint64_t address);
+        void pop     (ud_t * ud_obj, uint64_t address);
+        void push    (ud_t * ud_obj, uint64_t address);
+        void ret     (ud_t * ud_obj, uint64_t address);
+        void sar     (ud_t * ud_obj, uint64_t address);
+        void shr     (ud_t * ud_obj, uint64_t address);
+        void sub     (ud_t * ud_obj, uint64_t address);
+        void syscall (ud_t * ud_obj, uint64_t address);
+        void test    (ud_t * ud_obj, uint64_t address);
+        void Xor     (ud_t * ud_obj, uint64_t address);
 };
 
 #endif
