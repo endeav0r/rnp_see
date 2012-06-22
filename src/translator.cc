@@ -285,7 +285,10 @@ InstructionOperand Translator :: operand (ud_t * ud_obj, int operand_i, uint64_t
         InstructionOperand base_displacement = base;
         if (operand.base && operand.offset) {
             base_displacement = InstructionOperand(OPTYPE_VAR, register_bits(operand.base));
-            instructions.push_back(new InstructionAdd(address, size, base_displacement, base, displ));
+            instructions.push_back(new InstructionSignExtend(address,           size,
+                                                             base_displacement, displ));
+            instructions.push_back(new InstructionAdd(address, size, base_displacement,
+                                                      base,    base_displacement));
         }
         else if ((! operand.base) && (operand.offset))
             base_displacement = displ;
@@ -382,8 +385,17 @@ void Translator :: call (ud_t * ud_obj, uint64_t address)
     // set RIP += offset
     InstructionOperand dst = operand_get(ud_obj, 0, address);
     InstructionOperand off = InstructionOperand(OPTYPE_VAR, 64);
-    instructions.push_back(new InstructionSignExtend(address, ud_insn_len(ud_obj), off, dst));
-    instructions.push_back(new InstructionAdd(address, ud_insn_len(ud_obj), rip, rip, off));
+    InstructionOperand one = InstructionOperand(OPTYPE_CONSTANT, 1, 1);
+
+    if (ud_obj->operand[0].type == UD_OP_JIMM) {
+        instructions.push_back(new InstructionSignExtend(address, ud_insn_len(ud_obj), off, dst));
+        instructions.push_back(new InstructionAdd(address, ud_insn_len(ud_obj), off, rip, off));
+        instructions.push_back(new InstructionBrc(address, ud_insn_len(ud_obj), one, off));
+    }
+    else {
+        instructions.push_back(new InstructionBrc(address, ud_insn_len(ud_obj), one, dst));
+    }
+
 }
 
 

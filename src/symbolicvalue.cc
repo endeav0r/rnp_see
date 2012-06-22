@@ -6,6 +6,7 @@
 int64_t SymbolicValue :: g_svalue () const
 {
     switch (bits) {
+    case 1  : return (int8_t)  value & 0x1;
     case 8  : return (int8_t)  value;
     case 16 : return (int16_t) value;
     case 32 : return (int32_t) value;
@@ -14,7 +15,7 @@ int64_t SymbolicValue :: g_svalue () const
     return value;
 }
 
-std::string SymbolicValue :: str () const
+const std::string SymbolicValue :: str () const
 {
     std::stringstream ss;
 
@@ -24,8 +25,13 @@ std::string SymbolicValue :: str () const
     return ss.str();
 }
 
+const std::string SymbolicValueNot :: str () const
+{
+    return std::string("~(") + src.str() + ")";
+}
+
 #define SVSTR(OPER, CLASS) \
-std::string CLASS :: str () const \
+const std::string CLASS :: str () const \
 {                                 \
     return std::string("(") + lhs.str() + " ##OPER## " + rhs.str() + ")"; \
 }
@@ -38,6 +44,12 @@ SVSTR(==, SymbolicValueEq)
 SVSTR(>>, SymbolicValueShr)
 SVSTR(-,  SymbolicValueSub)
 SVSTR(^,  SymbolicValueXor)
+
+const SymbolicValue SymbolicValue :: operator~ () const
+{
+    if (not wild) return SymbolicValue(this->bits, ~this->value);
+    else return SymbolicValueNot(*this);
+}
 
 const SymbolicValue SymbolicValue :: signExtend () const
 {

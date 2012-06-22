@@ -1,6 +1,6 @@
 #!/usr/bin/lua
 
---require('lfs')
+require('lfs')
 
 CPP   = 'g++'
 FLAGS = '-Wall -Wno-switch -g --std=c++0x'

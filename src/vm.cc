@@ -125,6 +125,7 @@ void VM :: step ()
         else EXECUTE(InstructionCmpLts)
         else EXECUTE(InstructionCmpLtu)
         else EXECUTE(InstructionLoad)
+        else EXECUTE(InstructionNot)
         else EXECUTE(InstructionShr)
         else EXECUTE(InstructionSignExtend)
         else EXECUTE(InstructionStore)
@@ -212,6 +213,12 @@ void VM :: execute (InstructionLoad * load)
         ss << "Tried to load invalid bit size: " << src.g_bits();
         throw std::runtime_error(ss.str());
     }
+}
+
+
+void VM :: execute (InstructionNot * Not)
+{
+    variables[Not->g_dst().g_id()] = ~ g_value(Not->g_src());
 }
 
 

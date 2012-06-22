@@ -39,16 +39,33 @@ class Elf32 : public Elf {
 
 class Elf64Symbol {
     private :
-        const std::string name;
-        const uint64_t offset;
-        const uint64_t address;
+        std::string name;
+        uint64_t offset;
+        uint64_t address;
+        uint8_t  binding;
+        uint16_t shndx;
     public :
-        Elf64Symbol (const std::string name, uint64_t offset, uint64_t address)
-            : name(name), offset(offset), address(address) {}
-        Elf64Symbol () : name(""), offset(0), address(0) {}
+        Elf64Symbol (const std::string name,
+                     uint64_t offset,
+                     uint64_t address,
+                     uint8_t  binding,
+                     uint16_t shndx)
+            : name(name), offset(offset), address(address), binding(binding), shndx(shndx) {}
+        Elf64Symbol () : name(""), offset(0), address(0), binding(0), shndx(0) {}
         const std::string g_name    () const { return name; }
         const uint64_t    g_offset  () const { return offset; }
         const uint64_t    g_address () const { return address; }
+        const uint8_t     g_binding () const { return binding; }
+        const uint16_t    g_shndx   () const { return shndx; }
+
+        Elf64Symbol operator = (const Elf64Symbol & rhs) {
+            name = rhs.name;
+            offset = rhs.offset;
+            address = rhs.address;
+            binding = rhs.binding;
+            shndx = rhs.shndx;
+            return *this;
+        }
 };
 
 class Elf64Relocation {
@@ -56,14 +73,19 @@ class Elf64Relocation {
         const Elf64Symbol symbol;
         const uint64_t    offset;
         const uint64_t    addend;
+        const uint8_t     type;
     public :
-        Elf64Relocation (const Elf64Symbol & symbol, const uint64_t offset)
-            : symbol(symbol), offset(offset), addend(0) {}
-        Elf64Relocation (const Elf64Symbol & symbol, const uint64_t offset, const uint64_t addend)
-            : symbol(symbol), offset(offset), addend(addend) {}
+        Elf64Relocation (const Elf64Symbol & symbol, const uint64_t offset, const uint8_t type)
+            : symbol(symbol), offset(offset), addend(0), type(type) {}
+        Elf64Relocation (const Elf64Symbol & symbol,
+                         const uint64_t offset,
+                         const uint64_t addend,
+                         const uint8_t  type)
+            : symbol(symbol), offset(offset), addend(addend), type(type) {}
         const Elf64Symbol & g_symbol () const { return symbol; }
         const uint64_t      g_offset () const { return offset; }
         const uint64_t      g_addend () const { return addend; }
+        const uint8_t       g_type   () const { return type;   }
 };
 
 class Elf64 : public Elf {
@@ -84,14 +106,16 @@ class Elf64 : public Elf {
         std::list <Elf64Relocation> g_relocations  ();
         std::map <uint64_t, Page *> g_pages        ();
 
-        const Elf64Symbol           find_symbol      (const std::string name);
-        const Elf64Symbol           find_symbol_deps (const std::string name);
+        std::list <Elf64Symbol> find_symbols      (const std::string name);
+        std::list <Elf64Symbol> find_symbols_deps (const std::string name);
+        const Elf64Symbol       find_symbol_glob  (const std::string name, Elf64 & elf);
 
         void load_dependencies ();
-        void patch_relocations (Memory & memory);
+        void patch_relocations (Memory & memory, Elf64 & elf);
     public :
         Elf64 (const std::string filename);
         Elf64 (const std::string filename, uint64_t offset);
+        ~Elf64 ();
 
         uint64_t g_entry ();
         Memory                             g_memory    ();

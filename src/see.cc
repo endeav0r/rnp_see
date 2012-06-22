@@ -4,7 +4,7 @@
 #include <sstream>
 
 #include <inttypes.h>
-#include <stdio.h>
+#include <cstdio>
 
 #include <udis86.h>
 
@@ -37,12 +37,18 @@ int main (int argc, char * argv[])
     
     std::cout << std::endl;
 
-    for (int i = 0; i < 32; i++)
-        vm.step();
-
-    std::cout << std::endl;
-    
-    vm.debug_x86_registers();
+    while (true) {
+        int c = getc(stdin);
+        if (c == 's') vm.step();
+        if (c == 'd') {
+            for (int i = 0; i < 8; i++) vm.step();
+        }
+        if (c == 'f') {
+            for (int i = 0; i < 16; i++) vm.step();
+        }
+        if (c == 'r') vm.debug_x86_registers();
+        if (c == 'v') vm.debug_variables();
+    }
 
     return 0;
 }

@@ -4,10 +4,12 @@
 #include <cstring>
 #include <iostream>
 #include <stdexcept>
+#include <sstream>
 
 #include "instruction.h"
 
 #define DEBUG
+#define DEBUG_RELO
 
 /*
  *  Performs a lot of checking/cleaning of pages.
@@ -184,7 +186,8 @@ const Elf64Symbol Elf64 :: g_symbol (size_t symtab_index, size_t symbol_index)
     const Elf64_Sym * sym = (const Elf64_Sym *) &(data[offset]);
     const std::string name = g_strtab_str(shdr->sh_link, sym->st_name);
 
-    return Elf64Symbol(name, sym->st_value, sym->st_value + this->offset);
+    return Elf64Symbol(name, sym->st_value, sym->st_value + this->offset,
+                       ELF64_ST_BIND(sym->st_info), sym->st_shndx);
 }
 
 
@@ -269,7 +272,11 @@ std::list <Elf64Relocation> Elf64 :: g_relocations ()
                 size_t rela_offset = shdr->sh_offset + shdr->sh_entsize * reli;
                 const Elf64_Rela * rela  = (const Elf64_Rela *) &(data[rela_offset]);
                 const Elf64Symbol symbol = g_symbol(shdr->sh_link, ELF64_R_SYM(rela->r_info));
-                relocations.push_back(Elf64Relocation(symbol, rela->r_offset));
+                Elf64Relocation r(symbol,
+                                  rela->r_offset,
+                                  rela->r_addend,
+                                  ELF64_R_TYPE(rela->r_info));
+                relocations.push_back(r);
             }
         }
     }
@@ -278,32 +285,63 @@ std::list <Elf64Relocation> Elf64 :: g_relocations ()
 }
 
 
-const Elf64Symbol Elf64 :: find_symbol (const std::string name)
+std::list <Elf64Symbol> Elf64 :: find_symbols (const std::string name)
 {
     std::list <Elf64Symbol> symbols = g_symbols();
+    std::list <Elf64Symbol> result;
     std::list <Elf64Symbol> :: iterator it;
 
     for (it = symbols.begin(); it != symbols.end(); it++) {
-        if ((*it).g_name() == name) return *it;
-    }
-
-    return Elf64Symbol();
-}
-
-
-const Elf64Symbol Elf64 :: find_symbol_deps (const std::string name)
-{
-    std::list <Elf64 *> :: iterator dit;
-
-    for (dit = dependencies.begin(); dit != dependencies.end(); dit++) {
-        std::list <Elf64Symbol> symbols = (*dit)->g_symbols();
-        std::list <Elf64Symbol> :: iterator it;
-
-        for (it = symbols.begin(); it != symbols.end(); it++) {
-            if ((*it).g_name() == name) return *it;
+        if ((*it).g_name() == name) {
+            result.push_back(*it);
         }
     }
 
+    return result;
+}
+
+
+std::list <Elf64Symbol> Elf64 :: find_symbols_deps (const std::string name)
+{
+    std::list <Elf64Symbol> symbols;
+    std::list <Elf64 *> :: iterator dit;
+
+    for (dit = dependencies.begin(); dit != dependencies.end(); dit++) {
+        std::list <Elf64Symbol> dep_symbols = (*dit)->find_symbols(name);
+        std::list <Elf64Symbol> :: iterator it;
+        for (it = dep_symbols.begin(); it != dep_symbols.end(); it++) {
+            if ((*it).g_name() == name)
+                symbols.push_back(*it);
+        }
+    }
+
+    return symbols;
+}
+
+
+const Elf64Symbol Elf64 :: find_symbol_glob (const std::string name, Elf64 & elf)
+{
+    std::list <Elf64Symbol> symbols = find_symbols(name);
+    std::list <Elf64Symbol> :: iterator it;
+
+    Elf64Symbol best_symbol;
+
+    for (it = symbols.begin(); it != symbols.end(); it++) {
+        if (it->g_binding() == STB_LOCAL)
+            return *it;
+        best_symbol = *it;
+    }
+
+    symbols = elf.find_symbols_deps(name);
+    for (it = symbols.begin(); it != symbols.end(); it++) {
+        if ((it->g_binding() == STB_GLOBAL) && (it->g_shndx() != SHN_UNDEF))
+            return *it;
+        best_symbol = *it;
+    }
+
+    if (best_symbol.g_name() == name) return best_symbol;
+
+    throw std::runtime_error("could not find symbol in find_symbol_glob: " + name);
     return Elf64Symbol();
 }
 
@@ -357,25 +395,65 @@ void Elf64 :: load_dependencies ()
 }
 
 
-void Elf64 :: patch_relocations (Memory & memory)
+#define R_X86_64_64        1
+#define R_X86_64_GLOB_DAT  6
+#define R_X86_64_JUMP_SLOT 7
+#define R_X86_64_RELATIVE  8
+#define R_X86_64_DTPMOD64  16
+#define R_X86_64_TPOFF64   18
+#define R_X86_64_IRELATIVE 37
+
+void Elf64 :: patch_relocations (Memory & memory, Elf64 & elf)
 {
-    // find relocations in main executable
     std::list <Elf64Relocation> relocations = g_relocations();
     std::list <Elf64Relocation> :: iterator it;
 
     for (it = relocations.begin(); it != relocations.end(); it++) {
-        const Elf64Symbol symbol = find_symbol_deps((*it).g_symbol().g_name());
+        if (    (it->g_type() == R_X86_64_GLOB_DAT)
+             || (it->g_type() == R_X86_64_JUMP_SLOT)) {
+            const Elf64Symbol symbol = find_symbol_glob((*it).g_symbol().g_name(), elf);
+            memory.s_qword(offset + it->g_offset(), symbol.g_address());   
 
-        memory.s_qword(it->g_offset(), symbol.g_address());
+            #ifdef DEBUG_RELO
+                std::cerr << "relocation JMP_SLOT("
+                          << it->g_symbol().g_name() << " "
+                          << std::hex << it->g_offset() << ") -> ("
+                          << symbol.g_name() << " "
+                          << std::hex << symbol.g_address() << ")"
+                          << std::endl;
+            #endif
+        }
+        else if (it->g_type() == R_X86_64_RELATIVE) {
+            memory.s_qword(offset + it->g_offset(), offset + it->g_addend());
 
-        #ifdef DEBUG
-            std::cerr << "relocation ("
-                      << it->g_symbol().g_name() << " "
-                      << std::hex << it->g_offset() << ") -> ("
-                      << symbol.g_name() << " "
-                      << std::hex << symbol.g_address() << ")"
-                      << std::endl;
-        #endif
+            #ifdef DEBUG_RELO
+                std::cerr << "relocation RELATIVE("
+                          << std::hex << it->g_offset() << ") -> ("
+                          << std::hex << offset + it->g_addend() << ")"
+                          << std::endl;
+            #endif
+        }
+        else if (it->g_type() == R_X86_64_64) {
+            const Elf64Symbol symbol = find_symbol_glob((*it).g_symbol().g_name(), elf);
+            memory.s_qword(offset + it->g_offset(),
+                           symbol.g_address() + it->g_addend());
+
+            #ifdef DEBUG_RELO
+                std::cerr << "relocation 64("
+                          << std::hex << it->g_offset() << ") -> ("
+                          << symbol.g_name() << " "
+                          << std::hex << symbol.g_address() + it->g_addend() << ")"
+                          << std::endl;
+            #endif
+        }
+        else if (it->g_type() == R_X86_64_TPOFF64) {}
+        else if (it->g_type() == R_X86_64_DTPMOD64) {}
+        else if (it->g_type() == R_X86_64_IRELATIVE) {}
+        else {
+            std::stringstream ss;
+            ss << "unknown relocation type: " << (int) it->g_type();
+            throw std::runtime_error(ss.str());
+        }
     }
 }
 
@@ -391,6 +469,16 @@ Elf64 :: Elf64 (const std::string filename, uint64_t offset)
     : filename(filename), offset(offset), dependency(true)
 {
     load();
+}
+
+
+Elf64 :: ~Elf64 ()
+{
+    std::list <Elf64 *> :: iterator dit;
+
+    for (dit = dependencies.begin(); dit != dependencies.end(); dit++) {
+        delete *dit;
+    }
 }
 
 
@@ -463,7 +551,19 @@ Memory Elf64 :: g_memory ()
 {
     Memory memory(g_pages());
 
-    patch_relocations(memory);
+    #ifdef DEBUG
+    std::cerr << "patching relocations for: " << filename << std::endl;
+    #endif
+    patch_relocations(memory, *this);
+
+    std::list <Elf64 *> :: iterator dit;
+
+    for (dit = dependencies.begin(); dit != dependencies.end(); dit++) {
+        #ifdef DEBUG
+        std::cerr << "patching relocations for: " << filename << std::endl;
+        #endif
+        (*dit)->patch_relocations(memory, *this);
+    }
 
     return memory;
 }
@@ -490,7 +590,7 @@ std::map <uint64_t, SymbolicValue> Elf64 :: g_variables ()
 
     uint64_t RSP = 0x7fff0000;
     RSP <<= 32;
-    RSP += 0x10000 - 8;
+    RSP += 0x10000 - 0x100;
     variables[InstructionOperand::str_to_id("UD_R_RSP")] = SymbolicValue(64, RSP);
     variables[InstructionOperand::str_to_id("UD_R_RBP")] = SymbolicValue(64, RSP + 20);
     variables[InstructionOperand::str_to_id("UD_R_RIP")] = SymbolicValue(64, g_entry());

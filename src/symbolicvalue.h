@@ -16,7 +16,7 @@ class SymbolicValue {
         SymbolicValue (int bits, uint64_t value) : bits(bits), value(value), wild(false) {}
         SymbolicValue (int bits)                 : bits(bits), value(0),     wild(true) {}
         
-        virtual std::string str () const;
+        virtual const std::string str () const;
 
         uint64_t    g_value  () const { return value; }
         int64_t     g_svalue () const;
@@ -29,11 +29,20 @@ class SymbolicValue {
         const SymbolicValue operator ^  (const SymbolicValue & rhs) const;
         const SymbolicValue operator == (const SymbolicValue & rhs) const;
         const SymbolicValue operator >> (const SymbolicValue & rhs) const;
+        const SymbolicValue operator ~  () const;
 
         const SymbolicValue cmpLts      (const SymbolicValue & rhs) const;
         const SymbolicValue cmpLtu      (const SymbolicValue & rhs) const;
 
         const SymbolicValue signExtend () const;
+};
+
+class SymbolicValueNot : public SymbolicValue {
+    protected :
+        const SymbolicValue src;
+    public :
+        SymbolicValueNot (const SymbolicValue & src) : src(src) { wild = true; }
+        const std::string str () const;
 };
 
 class SymbolicValueBinOp : public SymbolicValue {
@@ -50,7 +59,7 @@ class SymbolicValue##OPERATION : public SymbolicValueBinOp { \
     public :                                                 \
         SymbolicValue##OPERATION (const SymbolicValue & lhs, const SymbolicValue & rhs) \
             : SymbolicValueBinOp(lhs, rhs) { wild = true;} \
-        std::string str () const; \
+        const std::string str () const; \
 };
 
 

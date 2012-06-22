@@ -24,6 +24,7 @@ class VM {
         void execute (InstructionCmpLts *    );
         void execute (InstructionCmpLtu *    );
         void execute (InstructionLoad   *    );
+        void execute (InstructionNot    *    );
         void execute (InstructionShr    *    );
         void execute (InstructionSignExtend *);
         void execute (InstructionStore  *    );
