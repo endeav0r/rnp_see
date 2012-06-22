@@ -123,12 +123,14 @@ void VM :: step ()
         else EXECUTE(InstructionBrc)
         else EXECUTE(InstructionCmpEq)
         else EXECUTE(InstructionCmpLts)
+        else EXECUTE(InstructionCmpLtu)
         else EXECUTE(InstructionLoad)
+        else EXECUTE(InstructionShr)
         else EXECUTE(InstructionSignExtend)
         else EXECUTE(InstructionStore)
         else EXECUTE(InstructionSub)
         else EXECUTE(InstructionXor)
-        else throw std::runtime_error("unimplemented instruction: " + (*it)->str());
+        else throw std::runtime_error("unimplemented vm instruction: " + (*it)->str());
     }
 }
 
@@ -173,8 +175,13 @@ void VM :: execute (InstructionCmpEq * cmpeq)
 
 void VM :: execute (InstructionCmpLts * cmplts)
 {
-    variables[cmplts->g_dst().g_id()] =    g_value(cmplts->g_lhs())
-                                        == g_value(cmplts->g_rhs());
+    variables[cmplts->g_dst().g_id()] = g_value(cmplts->g_lhs()).cmpLts(g_value(cmplts->g_rhs()));
+}
+
+
+void VM :: execute (InstructionCmpLtu * cmpltu)
+{
+    variables[cmpltu->g_dst().g_id()] = g_value(cmpltu->g_lhs()).cmpLtu(g_value(cmpltu->g_rhs()));
 }
 
 
@@ -205,6 +212,12 @@ void VM :: execute (InstructionLoad * load)
         ss << "Tried to load invalid bit size: " << src.g_bits();
         throw std::runtime_error(ss.str());
     }
+}
+
+
+void VM :: execute (InstructionShr * shr)
+{
+    variables[shr->g_dst().g_id()] = g_value(shr->g_lhs()) >> g_value(shr->g_rhs());
 }
 
 

@@ -32,7 +32,6 @@ std::map <uint64_t, Page *> Elf :: fix_pages (std::multimap <uint64_t, Page *> p
                 uint64_t nnext = next->first + next->second->g_size();
                 // find the first address which is not a page and hold that value
                 // in nnext
-                std::cerr << "nnext: " << std::hex << nnext << std::endl;
                 while (pages.count(nnext) > 0) {
                     std::pair<std::multimap <uint64_t, Page *> :: iterator,
                               std::multimap <uint64_t, Page *> :: iterator> nnext_range;
@@ -420,10 +419,6 @@ std::map <uint64_t, Page *> Elf64 :: g_pages ()
             pages.insert(p);
             delete tmp;
         }
-
-        #ifdef DEBUG
-        std::cerr << "fixing pages" << std::endl;
-        #endif
         return fix_pages(pages);
     }
     else {

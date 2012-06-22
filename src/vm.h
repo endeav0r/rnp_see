@@ -22,7 +22,9 @@ class VM {
         void execute (InstructionBrc    *    );
         void execute (InstructionCmpEq  *    );
         void execute (InstructionCmpLts *    );
+        void execute (InstructionCmpLtu *    );
         void execute (InstructionLoad   *    );
+        void execute (InstructionShr    *    );
         void execute (InstructionSignExtend *);
         void execute (InstructionStore  *    );
         void execute (InstructionSub    *    );

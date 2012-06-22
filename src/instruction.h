@@ -244,64 +244,31 @@ class InstructionBinOp : public InstructionBaseStmt {
         std::string binop_str (std::string mnemonic, std::string op, std::string dst, std::string lhs, std::string rhs);
 };
 
-class InstructionAdd  : public InstructionBinOp {
-    public :
-        InstructionAdd (uint64_t address, uint32_t size, InstructionOperand dst, InstructionOperand lhs, InstructionOperand rhs)
-            : InstructionBinOp(address, size, dst, lhs, rhs) {}
-        std::string str();
+#define INSTRUCTIONBINOPCLASS(OPERATION) \
+class Instruction##OPERATION : public InstructionBinOp { \
+    public :                                             \
+        Instruction##OPERATION (uint64_t address,        \
+                                uint32_t size,           \
+                                InstructionOperand dst,  \
+                                InstructionOperand lhs,  \
+                                InstructionOperand rhs)  \
+            : InstructionBinOp(address, size, dst, lhs, rhs) {} \
+        std::string str();                               \
 };
 
-class InstructionSub  : public InstructionBinOp {
-    public :
-        InstructionSub (uint64_t address, uint32_t size, InstructionOperand dst, InstructionOperand lhs, InstructionOperand rhs)
-            : InstructionBinOp(address, size, dst, lhs, rhs) {}
-        std::string str();
-};
-
-class InstructionMul  : public InstructionBinOp {
-    public :
-        InstructionMul (uint64_t address, uint32_t size, InstructionOperand dst, InstructionOperand lhs, InstructionOperand rhs)
-            : InstructionBinOp(address, size, dst, lhs, rhs) {}
-        std::string str();
-};
+INSTRUCTIONBINOPCLASS(Add)
+INSTRUCTIONBINOPCLASS(Sub)
+INSTRUCTIONBINOPCLASS(Mul)
+INSTRUCTIONBINOPCLASS(Shl)
+INSTRUCTIONBINOPCLASS(Shr)
+INSTRUCTIONBINOPCLASS(And)
+INSTRUCTIONBINOPCLASS(Or)
+INSTRUCTIONBINOPCLASS(Xor)
 
 class InstructionDiv  : public InstructionBinOp {};
 class InstructionDivs : public InstructionBinOp {};
-class InstructionShl  : public InstructionBinOp {
-    public :
-        InstructionShl (uint64_t address, uint32_t size, InstructionOperand dst, InstructionOperand lhs, InstructionOperand rhs)
-            : InstructionBinOp(address, size, dst, lhs, rhs) {}
-        std::string str();
-};
-class InstructionShr  : public InstructionBinOp {
-    public :
-        InstructionShr (uint64_t address, uint32_t size, InstructionOperand dst, InstructionOperand lhs, InstructionOperand rhs)
-            : InstructionBinOp(address, size, dst, lhs, rhs) {}
-        std::string str();
-};
 class InstructionShrs : public InstructionBinOp {};
 class InstructionMod  : public InstructionBinOp {};
-
-class InstructionAnd  : public InstructionBinOp {
-    public :
-        InstructionAnd (uint64_t address, uint32_t size, InstructionOperand dst, InstructionOperand lhs, InstructionOperand rhs)
-            : InstructionBinOp(address, size, dst, lhs, rhs) {}
-        std::string str();
-};
-
-class InstructionOr   : public InstructionBinOp {
-    public :
-        InstructionOr (uint64_t address, uint32_t size, InstructionOperand dst, InstructionOperand lhs, InstructionOperand rhs)
-            : InstructionBinOp(address, size, dst, lhs, rhs) {}
-        std::string str();
-};
-
-class InstructionXor  : public InstructionBinOp {
-    public :
-        InstructionXor (uint64_t address, uint32_t size, InstructionOperand dst, InstructionOperand lhs, InstructionOperand rhs)
-            : InstructionBinOp(address, size, dst, lhs, rhs) {}
-        std::string str();
-};
 
 /***********
  * CMPOPS  *

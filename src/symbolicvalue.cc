@@ -33,7 +33,9 @@ std::string CLASS :: str () const \
 SVSTR(+,  SymbolicValueAdd)
 SVSTR(&,  SymbolicValueAnd)
 SVSTR(<,  SymbolicValueCmpLts)
+SVSTR(<,  SymbolicValueCmpLtu)
 SVSTR(==, SymbolicValueEq)
+SVSTR(>>, SymbolicValueShr)
 SVSTR(-,  SymbolicValueSub)
 SVSTR(^,  SymbolicValueXor)
 
@@ -55,6 +57,7 @@ SVOPERATOR(+, SymbolicValueAdd)
 SVOPERATOR(&, SymbolicValueAnd)
 SVOPERATOR(-, SymbolicValueSub)
 SVOPERATOR(^, SymbolicValueXor)
+SVOPERATOR(>>, SymbolicValueXor)
 
 
 #define SVCMP(OPER, CLASS) \
@@ -70,8 +73,6 @@ const SymbolicValue SymbolicValue :: operator OPER (const SymbolicValue & rhs) c
 
 SVCMP(==, SymbolicValueEq)
 
-
-
 const SymbolicValue SymbolicValue :: cmpLts (const SymbolicValue & rhs) const
 {
     if ((not this->wild) && (not rhs.wild)) {
@@ -80,4 +81,14 @@ const SymbolicValue SymbolicValue :: cmpLts (const SymbolicValue & rhs) const
     }
     else
         return SymbolicValueCmpLts(*this, rhs);
+}
+
+const SymbolicValue SymbolicValue :: cmpLtu (const SymbolicValue & rhs) const
+{
+    if ((not this->wild) && (not rhs.wild)) {
+        if (g_value() < rhs.g_value()) return SymbolicValue(1, 1);
+        else return SymbolicValue(1, 0);
+    }
+    else
+        return SymbolicValueCmpLtu(*this, rhs);
 }

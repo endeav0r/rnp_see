@@ -28,7 +28,10 @@ class SymbolicValue {
         const SymbolicValue operator &  (const SymbolicValue & rhs) const;
         const SymbolicValue operator ^  (const SymbolicValue & rhs) const;
         const SymbolicValue operator == (const SymbolicValue & rhs) const;
+        const SymbolicValue operator >> (const SymbolicValue & rhs) const;
+
         const SymbolicValue cmpLts      (const SymbolicValue & rhs) const;
+        const SymbolicValue cmpLtu      (const SymbolicValue & rhs) const;
 
         const SymbolicValue signExtend () const;
 };
@@ -54,8 +57,10 @@ class SymbolicValue##OPERATION : public SymbolicValueBinOp { \
 SVBINOPCLASS(Add)
 SVBINOPCLASS(And)
 SVBINOPCLASS(CmpLts)
+SVBINOPCLASS(CmpLtu)
 SVBINOPCLASS(Eq)
 SVBINOPCLASS(Sub)
 SVBINOPCLASS(Xor)
+SVBINOPCLASS(Shr)
 
 #endif
