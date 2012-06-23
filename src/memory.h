@@ -6,18 +6,29 @@
 #include <cstddef>
 
 #include <map>
+#include <set>
 #include <string>
 
 #include "page.h"
 
 class Memory {
     private :
+
+        // a set is the right data structure to use here, but we keep getting
+        // weird errors at runtime
+        std::map <uint64_t, int> dirty_counter;
+        std::set <uint64_t> dirty;
         std::map <uint64_t, Page *> pages;
 
-        uint64_t g_page_address(uint64_t address, int bits);
+        uint64_t g_page_address (uint64_t address, int bits);
+        void     dirty_page     (uint64_t address);
     public :
         Memory () {};
         Memory (std::map <uint64_t, Page *> pages) : pages(pages) {};
+
+        ~Memory();
+
+        Memory copy ();
 
         size_t    g_data_size (uint64_t address);
         uint8_t * g_data      (uint64_t address);

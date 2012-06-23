@@ -36,16 +36,17 @@ int main (int argc, char * argv[])
     
     std::cout << std::endl;
 
+    for (int i = 0; i < 32; i++) vm.step();
+
+    return 0;
+
     while (true) {
         int c = getc(stdin);
-        if (c == 's') vm.step();
-        if (c == 'd') {
-            for (int i = 0; i < 8; i++) vm.step();
-        }
-        if (c == 'f') {
-            for (int i = 0; i < 16; i++) vm.step();
-        }
+        if (c == 'a') { while (true) vm.step(); }
+        if (c == 'd') { for (int i = 0; i < 8; i++) vm.step(); }
+        if (c == 'f') { for (int i = 0; i < 16; i++) vm.step(); }
         if (c == 'r') vm.debug_x86_registers();
+        if (c == 's') vm.step();
         if (c == 'v') vm.debug_variables();
     }
 

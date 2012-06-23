@@ -37,6 +37,7 @@ class Translator {
         void hlt     (ud_t * ud_obj, uint64_t address);
         void ja      (ud_t * ud_obj, uint64_t address);
         void jl      (ud_t * ud_obj, uint64_t address);
+        void jle     (ud_t * ud_obj, uint64_t address);
         void jmp     (ud_t * ud_obj, uint64_t address);
         void jnz     (ud_t * ud_obj, uint64_t address);
         void jz      (ud_t * ud_obj, uint64_t address);
@@ -50,6 +51,7 @@ class Translator {
         void push    (ud_t * ud_obj, uint64_t address);
         void ret     (ud_t * ud_obj, uint64_t address);
         void sar     (ud_t * ud_obj, uint64_t address);
+        void setz    (ud_t * ud_obj, uint64_t address);
         void shr     (ud_t * ud_obj, uint64_t address);
         void sub     (ud_t * ud_obj, uint64_t address);
         void syscall (ud_t * ud_obj, uint64_t address);

@@ -65,6 +65,7 @@ std::list <Instruction *> Translator :: translate (uint64_t address, uint8_t * d
         case UD_Ihlt     : hlt     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
         case UD_Ija      : ja      (&ud_obj, address + ud_insn_off(&ud_obj)); break;
         case UD_Ijl      : jl      (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Ijle     : jle     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
         case UD_Ijmp     : jmp     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
         case UD_Ijnz     : jnz     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
         case UD_Ijz      : jz      (&ud_obj, address + ud_insn_off(&ud_obj)); break;
@@ -78,6 +79,7 @@ std::list <Instruction *> Translator :: translate (uint64_t address, uint8_t * d
         case UD_Ipush    : push    (&ud_obj, address + ud_insn_off(&ud_obj)); break;
         case UD_Iret     : ret     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
         case UD_Isar     : sar     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Isetz    : setz    (&ud_obj, address + ud_insn_off(&ud_obj)); break;
         case UD_Ishr     : shr     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
         case UD_Isub     : sub     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
         case UD_Isyscall : syscall (&ud_obj, address + ud_insn_off(&ud_obj)); break;
@@ -118,6 +120,7 @@ std::list <Instruction *> Translator :: translate_all (uint64_t address, uint8_t
         case UD_Ihlt    : hlt    (&ud_obj, address + ud_insn_off(&ud_obj)); break;
         case UD_Ija     : ja     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
         case UD_Ijl     : jl     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Ijle    : jle    (&ud_obj, address + ud_insn_off(&ud_obj)); break;
         case UD_Ijmp    : jmp    (&ud_obj, address + ud_insn_off(&ud_obj)); break;
         case UD_Ijnz    : jnz    (&ud_obj, address + ud_insn_off(&ud_obj)); break;
         case UD_Ijz     : jz     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
@@ -474,6 +477,29 @@ void Translator :: jl (ud_t * ud_obj, uint64_t address)
 }
 
 
+void Translator :: jle (ud_t * ud_obj, uint64_t address)
+{
+    size_t size = ud_insn_len(ud_obj);
+    InstructionOperand ZForSFxorOF (OPTYPE_VAR, 1);
+    InstructionOperand ZF (OPTYPE_VAR, 1, "ZF");
+    InstructionOperand SF (OPTYPE_VAR, 1, "SF");
+    InstructionOperand OF (OPTYPE_VAR, 1, "OF");
+    InstructionOperand dst = operand_get(ud_obj, 0, address);
+
+    instructions.push_back(new InstructionXor(address, size, ZForSFxorOF, SF, OF));
+    instructions.push_back(new InstructionOr(address, size, ZForSFxorOF, ZForSFxorOF, ZF));
+
+    if (ud_obj->operand[0].type == UD_OP_JIMM) {
+        InstructionOperand rip(OPTYPE_VAR, 64, "UD_R_RIP");
+        InstructionOperand tmp(OPTYPE_VAR, 64);
+        instructions.push_back(new InstructionSignExtend(address, size, tmp, dst));
+        instructions.push_back(new InstructionAdd(address, size, tmp, rip, tmp));
+        instructions.push_back(new InstructionBrc(address, size, ZForSFxorOF, tmp));
+    }
+    else instructions.push_back(new InstructionBrc(address, size, ZForSFxorOF, dst));
+}
+
+
 // making this an InstructionBrc greatly simplifies analysis as all branches are
 // either InstructionBrc or InstructionCall
 void Translator :: jmp (ud_t * ud_obj, uint64_t address)
@@ -602,7 +628,8 @@ void Translator :: movzx (ud_t * ud_obj, uint64_t address)
 void Translator :: nop (ud_t * ud_obj, uint64_t address)
 {
     InstructionOperand noperand(OPTYPE_VAR, 1, "NOP");
-    instructions.push_back(new InstructionAnd(address, ud_insn_len(ud_obj), noperand, noperand, noperand));
+    InstructionOperand zero(OPTYPE_CONSTANT, 1, 0);
+    instructions.push_back(new InstructionAssign(address, ud_insn_len(ud_obj), noperand, zero));
 }
 
 
@@ -696,6 +723,14 @@ void Translator :: sar (ud_t * ud_obj, uint64_t address)
     instructions.push_back(new InstructionCmpEq(address, size, ZF, tmp, zero));
     
     operand_set(ud_obj, 0, address, tmp);
+}
+
+
+void Translator :: setz (ud_t * ud_obj, uint64_t address)
+{
+    InstructionOperand ZF (OPTYPE_VAR, 1, "ZF");
+
+    operand_set(ud_obj, 0, address, ZF);
 }
 
 

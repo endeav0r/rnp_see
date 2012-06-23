@@ -9,7 +9,7 @@
 #include "instruction.h"
 
 #define DEBUG
-#define DEBUG_RELO
+//#define DEBUG_RELO
 
 /*
  *  Performs a lot of checking/cleaning of pages.
@@ -23,6 +23,7 @@ std::map <uint64_t, Page *> Elf :: fix_pages (std::multimap <uint64_t, Page *> p
     std::map <uint64_t, Page *> final_pages;
 
     // no overlapping pages
+    // this just fixes the pages in pages, but does not add them to final_pages
     std::multimap <uint64_t, Page *> :: iterator it = pages.begin();
     std::multimap <uint64_t, Page *> :: iterator next = it; next++;
     while (next != pages.end()) {
@@ -64,36 +65,25 @@ std::map <uint64_t, Page *> Elf :: fix_pages (std::multimap <uint64_t, Page *> p
             // now resize the page so it doesn't overlap
             it->second->resize(next->first - it->first);
         }
-        
-        final_pages[it->first] = it->second;
         it++;
         next++;
     }
 
-    // add the last page
-    std::multimap <uint64_t, Page *> :: iterator lpit;
-    lpit = pages.end();
-    lpit--;
-    final_pages[lpit->first] = lpit->second;
+    // add the pages to final_pages
+    for (it = pages.begin(); it != pages.end(); it++) {
+        final_pages[it->first] = it->second;
+    }
 
     // no empty pages
     std::map <uint64_t, Page *> :: iterator fpit;
     for (fpit = final_pages.begin(); fpit != final_pages.end(); fpit++) {
-        if (fpit->second->g_size() == 0) fpit = final_pages.erase(fpit);
+        if (fpit->second->g_size() == 0) {
+            fpit->second->destroy();
+            fpit = final_pages.erase(fpit);
+        }
     }
 
     return final_pages;
-}
-
-Elf :: Elf ()
-{
-    data = NULL;
-    data_size = 0;
-}
-
-Elf :: ~Elf()
-{
-    if (data != NULL) delete data;
 }
 
 Elf * Elf :: Get (std::string filename)
@@ -112,6 +102,8 @@ Elf * Elf :: Get (std::string filename)
     if (filesize < 1024) throw std::runtime_error("elf < 1kb?");
 
     fread(tmp, 1, 1024, fh);
+
+    fclose(fh);
 
     if (    (tmp[EI_MAG0] == ELFMAG0)
          && (tmp[EI_MAG1] == ELFMAG1)
@@ -461,6 +453,7 @@ void Elf64 :: patch_relocations (Memory & memory, Elf64 & elf)
 Elf64 :: Elf64 (const std::string filename)
     : filename(filename), offset(0), dependency(false)
 {
+    data = NULL;
     load();
 }
 
@@ -468,17 +461,23 @@ Elf64 :: Elf64 (const std::string filename)
 Elf64 :: Elf64 (const std::string filename, uint64_t offset)
     : filename(filename), offset(offset), dependency(true)
 {
+    data = NULL;
     load();
 }
 
 
 Elf64 :: ~Elf64 ()
 {
+    #ifdef DEBUG
+    std::cerr << "Elf64 " << filename << " destructor" << std::endl;
+    #endif
     std::list <Elf64 *> :: iterator dit;
 
     for (dit = dependencies.begin(); dit != dependencies.end(); dit++) {
         delete *dit;
     }
+
+    if (data) delete[] data;
 }
 
 
@@ -505,7 +504,7 @@ std::map <uint64_t, Page *> Elf64 :: g_pages ()
             uint64_t vaddr = this->offset + phdr->p_vaddr;
             std::pair<uint64_t, Page *> p(vaddr, new Page(phdr->p_memsz, tmp));
             pages.insert(p);
-            delete tmp;
+            delete[] tmp;
         }
         return fix_pages(pages);
     }
@@ -516,12 +515,13 @@ std::map <uint64_t, Page *> Elf64 :: g_pages ()
             const Elf64_Phdr * phdr = (const Elf64_Phdr *) &(data[phdr_offset]);
             //if (phdr->p_type == PT_NULL) continue;
             // temporarily allocate space to store the page data
+            // don't allocate empty pages
             uint8_t * tmp = new uint8_t[phdr->p_memsz];
             memset(tmp, 0, phdr->p_memsz);
             memcpy(tmp, &(data[phdr->p_offset]), phdr->p_filesz);
             std::pair<uint64_t, Page *> p(phdr->p_vaddr, new Page(phdr->p_memsz, tmp));
             pages.insert(p);
-            delete tmp;
+            delete[] tmp;
         }
 
         // pages for dependencies
@@ -542,6 +542,9 @@ std::map <uint64_t, Page *> Elf64 :: g_pages ()
 
         pages.insert(std::pair<uint64_t, Page *>(ELF64_STACK_BEGIN, new Page(0x10000)));
 
+        #ifdef DEBUG
+        std::cerr << "fixing pages" << std::endl;
+        #endif
         return fix_pages(pages);
     }
 }
@@ -560,7 +563,7 @@ Memory Elf64 :: g_memory ()
 
     for (dit = dependencies.begin(); dit != dependencies.end(); dit++) {
         #ifdef DEBUG
-        std::cerr << "patching relocations for: " << filename << std::endl;
+        std::cerr << "patching relocations for: " << (*dit)->g_filename() << std::endl;
         #endif
         (*dit)->patch_relocations(memory, *this);
     }

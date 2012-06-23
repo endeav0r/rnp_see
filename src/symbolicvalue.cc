@@ -41,6 +41,7 @@ SVSTR(&,  SymbolicValueAnd)
 SVSTR(<,  SymbolicValueCmpLts)
 SVSTR(<,  SymbolicValueCmpLtu)
 SVSTR(==, SymbolicValueEq)
+SVSTR(|, SymbolicValueOr)
 SVSTR(>>, SymbolicValueShr)
 SVSTR(-,  SymbolicValueSub)
 SVSTR(^,  SymbolicValueXor)
@@ -65,11 +66,12 @@ const SymbolicValue SymbolicValue :: operator OPER (const SymbolicValue & rhs) c
         return CLASS(*this, rhs);                                                 \
 }
 
-SVOPERATOR(+, SymbolicValueAdd)
-SVOPERATOR(&, SymbolicValueAnd)
-SVOPERATOR(-, SymbolicValueSub)
-SVOPERATOR(^, SymbolicValueXor)
-SVOPERATOR(>>, SymbolicValueXor)
+SVOPERATOR(+,  SymbolicValueAdd)
+SVOPERATOR(&,  SymbolicValueAnd)
+SVOPERATOR(|,  SymbolicValueOr)
+SVOPERATOR(>>, SymbolicValueShr)
+SVOPERATOR(-,  SymbolicValueSub)
+SVOPERATOR(^,  SymbolicValueXor)
 
 
 #define SVCMP(OPER, CLASS) \

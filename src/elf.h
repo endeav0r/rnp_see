@@ -20,8 +20,7 @@ class Elf {
 
         std::map <uint64_t, Page *> fix_pages (std::multimap <uint64_t, Page *> pages);
     public :
-        Elf ();
-        ~Elf ();
+        virtual ~Elf () {};
         virtual uint64_t g_entry () = 0;
         virtual Memory                             g_memory    () = 0;
         virtual std::map <uint64_t, SymbolicValue> g_variables () = 0;
@@ -35,6 +34,7 @@ class Elf32 : public Elf {
         const Elf32_Ehdr * ehdr;
     public :
         Elf32 (std::string filename);
+        ~Elf32 () {}
 };
 
 class Elf64Symbol {
@@ -96,6 +96,8 @@ class Elf64 : public Elf {
         const uint64_t     offset; // virtual address offset
         bool               dependency;
 
+        std::list <Elf64Symbol> global_symbols;
+
         void load ();
 
         const std::string           g_strtab_str   (size_t strtab_index, size_t offset);
@@ -113,11 +115,12 @@ class Elf64 : public Elf {
         void load_dependencies ();
         void patch_relocations (Memory & memory, Elf64 & elf);
     public :
-        Elf64 (const std::string filename);
-        Elf64 (const std::string filename, uint64_t offset);
+        Elf64  (const std::string filename);
+        Elf64  (const std::string filename, uint64_t offset);
         ~Elf64 ();
 
-        uint64_t g_entry ();
+        std::string g_filename () { return filename; };
+        uint64_t    g_entry    ();
         Memory                             g_memory    ();
         std::map <uint64_t, SymbolicValue> g_variables ();
         uint64_t                           g_ip_id     ();

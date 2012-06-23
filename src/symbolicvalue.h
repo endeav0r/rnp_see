@@ -26,6 +26,7 @@ class SymbolicValue {
         const SymbolicValue operator +  (const SymbolicValue & rhs) const;
         const SymbolicValue operator -  (const SymbolicValue & rhs) const;
         const SymbolicValue operator &  (const SymbolicValue & rhs) const;
+        const SymbolicValue operator |  (const SymbolicValue & rhs) const;
         const SymbolicValue operator ^  (const SymbolicValue & rhs) const;
         const SymbolicValue operator == (const SymbolicValue & rhs) const;
         const SymbolicValue operator >> (const SymbolicValue & rhs) const;
@@ -68,6 +69,7 @@ SVBINOPCLASS(And)
 SVBINOPCLASS(CmpLts)
 SVBINOPCLASS(CmpLtu)
 SVBINOPCLASS(Eq)
+SVBINOPCLASS(Or)
 SVBINOPCLASS(Sub)
 SVBINOPCLASS(Xor)
 SVBINOPCLASS(Shr)

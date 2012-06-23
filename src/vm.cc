@@ -25,7 +25,9 @@ void VM :: debug_x86_registers ()
        PRINTREG("UD_R_R10") PRINTREG("UD_R_R11") 
        PRINTREG("UD_R_R12") PRINTREG("UD_R_R13")
        PRINTREG("UD_R_R14") PRINTREG("UD_R_R15")
-       PRINTREG("UD_R_RIP");
+       PRINTREG("UD_R_RIP") PRINTREG("ZF")
+       PRINTREG("OF")       PRINTREG("CF")
+       PRINTREG("SF");
     std::cout << ss.str();
 }
 
@@ -127,6 +129,7 @@ void VM :: step ()
         else EXECUTE(InstructionCmpLtu)
         else EXECUTE(InstructionLoad)
         else EXECUTE(InstructionNot)
+        else EXECUTE(InstructionOr)
         else EXECUTE(InstructionShr)
         else EXECUTE(InstructionSignExtend)
         else EXECUTE(InstructionStore)
@@ -134,6 +137,8 @@ void VM :: step ()
         else EXECUTE(InstructionSyscall)
         else EXECUTE(InstructionXor)
         else throw std::runtime_error("unimplemented vm instruction: " + (*it)->str());
+
+        delete *it;
     }
 }
 
@@ -163,7 +168,7 @@ void VM :: execute (InstructionBrc * brc)
     const SymbolicValue condition = g_value(brc->g_cond());
     if (condition.g_wild())
         throw std::runtime_error("symbolic brc not yet supported");
-    else {
+    else if (condition.g_value()) {
         variables[ip_id] = g_value(brc->g_dst());
     }
 }
@@ -221,6 +226,12 @@ void VM :: execute (InstructionLoad * load)
 void VM :: execute (InstructionNot * Not)
 {
     variables[Not->g_dst().g_id()] = ~ g_value(Not->g_src());
+}
+
+
+void VM :: execute (InstructionOr * Or)
+{
+    variables[Or->g_dst().g_id()] = g_value(Or->g_lhs()) | g_value(Or->g_rhs());
 }
 
 

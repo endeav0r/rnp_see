@@ -10,15 +10,15 @@ class Page {
         size_t size;
         Page * parent;
         
-        int references;
-        
-        void check_offset (size_t offset);
+        void check_offset (size_t offset, size_t bytes);
         
     public :
         Page (size_t size);
         Page (size_t size, uint8_t * data);
         
-        void destroy ();
+        Page * destroy ();
+
+        Page * make_child ();
         
         void set_parent (Page * parent);
         
