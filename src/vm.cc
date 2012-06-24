@@ -27,7 +27,7 @@ void VM :: debug_x86_registers ()
        PRINTREG("UD_R_R14") PRINTREG("UD_R_R15")
        PRINTREG("UD_R_RIP") PRINTREG("ZF")
        PRINTREG("OF")       PRINTREG("CF")
-       PRINTREG("SF");
+       PRINTREG("SF")       PRINTREG("UD_R_FS");
     std::cout << ss.str();
 }
 
@@ -51,7 +51,7 @@ const SymbolicValue VM :: g_value (InstructionOperand operand)
 
     if (variables.count(operand.g_id()) == 0) {
         std::stringstream ss;
-        ss << "operand not found, id: " << operand.g_id();
+        ss << "operand not found, id: " << std::hex << operand.g_id();
         throw std::runtime_error(ss.str());
     }
     
@@ -119,17 +119,21 @@ void VM :: step ()
 
     std::list <Instruction *> :: iterator it;
     for (it = instructions.begin(); it != instructions.end(); it++) {
-        std::cout << (*it)->str() << std::endl;
+        //std::cout << (*it)->str() << std::endl;
              EXECUTE(InstructionAdd)
         else EXECUTE(InstructionAnd)
         else EXECUTE(InstructionAssign)
         else EXECUTE(InstructionBrc)
         else EXECUTE(InstructionCmpEq)
+        else EXECUTE(InstructionCmpLes)
+        else EXECUTE(InstructionCmpLeu)
         else EXECUTE(InstructionCmpLts)
         else EXECUTE(InstructionCmpLtu)
         else EXECUTE(InstructionLoad)
         else EXECUTE(InstructionNot)
+        else EXECUTE(InstructionMul)
         else EXECUTE(InstructionOr)
+        else EXECUTE(InstructionShl)
         else EXECUTE(InstructionShr)
         else EXECUTE(InstructionSignExtend)
         else EXECUTE(InstructionStore)
@@ -181,6 +185,18 @@ void VM :: execute (InstructionCmpEq * cmpeq)
 }
 
 
+void VM :: execute (InstructionCmpLes * cmples)
+{
+    variables[cmples->g_dst().g_id()] = g_value(cmples->g_lhs()).cmpLes(g_value(cmples->g_rhs()));
+}
+
+
+void VM :: execute (InstructionCmpLeu * cmpleu)
+{
+    variables[cmpleu->g_dst().g_id()] = g_value(cmpleu->g_lhs()).cmpLeu(g_value(cmpleu->g_rhs()));
+}
+
+
 void VM :: execute (InstructionCmpLts * cmplts)
 {
     variables[cmplts->g_dst().g_id()] = g_value(cmplts->g_lhs()).cmpLts(g_value(cmplts->g_rhs()));
@@ -229,9 +245,21 @@ void VM :: execute (InstructionNot * Not)
 }
 
 
+void VM :: execute (InstructionMul * mul)
+{
+    variables[mul->g_dst().g_id()] = g_value(mul->g_lhs()) * g_value(mul->g_rhs());
+}
+
+
 void VM :: execute (InstructionOr * Or)
 {
     variables[Or->g_dst().g_id()] = g_value(Or->g_lhs()) | g_value(Or->g_rhs());
+}
+
+
+void VM :: execute (InstructionShl * shl)
+{
+    variables[shl->g_dst().g_id()] = g_value(shl->g_lhs()) >> g_value(shl->g_rhs());
 }
 
 

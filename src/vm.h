@@ -24,11 +24,15 @@ class VM {
         void execute (InstructionAssign *    );
         void execute (InstructionBrc    *    );
         void execute (InstructionCmpEq  *    );
+        void execute (InstructionCmpLes *    );
+        void execute (InstructionCmpLeu *    );
         void execute (InstructionCmpLts *    );
         void execute (InstructionCmpLtu *    );
         void execute (InstructionLoad   *    );
         void execute (InstructionNot    *    );
+        void execute (InstructionMul    *    );
         void execute (InstructionOr     *    );
+        void execute (InstructionShl    *    );
         void execute (InstructionShr    *    );
         void execute (InstructionSignExtend *);
         void execute (InstructionStore  *    );

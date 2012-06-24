@@ -11,7 +11,17 @@
 #include "page.h"
 #include "symbolicvalue.h"
 
+const uint64_t ELF64_DEP_ADDR   = 0x7f00000000000000ULL;
+const uint64_t ELF64_DEP_ADD    = 0x0010000000000000ULL;
 
+const uint64_t ELF64_TLS_ADDR   = 0x7ffe000000000000ULL;
+const uint64_t ELF64_TLS_SIZE   = 0x4000ULL;
+
+const uint64_t ELF64_STACK_ADDR = 0x7fff000000000000ULL;
+const uint64_t ELF64_STACK_SIZE = 0x4000ULL;
+
+const uint64_t ELF64_RSP_INIT   = 0x7fff000000003000ULL;
+const uint64_t ELF64_FS_INIT    = 0x7ffe000000000000ULL;
 
 class Elf {
     protected :

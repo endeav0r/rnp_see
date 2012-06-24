@@ -18,20 +18,24 @@ class SymbolicValue {
         
         virtual const std::string str () const;
 
-        uint64_t    g_value  () const { return value; }
+        uint64_t    g_value  () const;
         int64_t     g_svalue () const;
         int         g_bits   () const { return bits;  }
         bool        g_wild   () const { return wild;  }
 
         const SymbolicValue operator +  (const SymbolicValue & rhs) const;
         const SymbolicValue operator -  (const SymbolicValue & rhs) const;
+        const SymbolicValue operator *  (const SymbolicValue & rhs) const;
         const SymbolicValue operator &  (const SymbolicValue & rhs) const;
         const SymbolicValue operator |  (const SymbolicValue & rhs) const;
         const SymbolicValue operator ^  (const SymbolicValue & rhs) const;
         const SymbolicValue operator == (const SymbolicValue & rhs) const;
         const SymbolicValue operator >> (const SymbolicValue & rhs) const;
+        const SymbolicValue operator << (const SymbolicValue & rhs) const;
         const SymbolicValue operator ~  () const;
 
+        const SymbolicValue cmpLes      (const SymbolicValue & rhs) const;
+        const SymbolicValue cmpLeu      (const SymbolicValue & rhs) const;
         const SymbolicValue cmpLts      (const SymbolicValue & rhs) const;
         const SymbolicValue cmpLtu      (const SymbolicValue & rhs) const;
 
@@ -66,12 +70,16 @@ class SymbolicValue##OPERATION : public SymbolicValueBinOp { \
 
 SVBINOPCLASS(Add)
 SVBINOPCLASS(And)
+SVBINOPCLASS(CmpLes)
+SVBINOPCLASS(CmpLeu)
 SVBINOPCLASS(CmpLts)
 SVBINOPCLASS(CmpLtu)
 SVBINOPCLASS(Eq)
+SVBINOPCLASS(Mul)
 SVBINOPCLASS(Or)
 SVBINOPCLASS(Sub)
 SVBINOPCLASS(Xor)
+SVBINOPCLASS(Shl)
 SVBINOPCLASS(Shr)
 
 #endif

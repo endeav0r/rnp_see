@@ -6,7 +6,7 @@
 #include <cstddef>
 
 #include <map>
-#include <set>
+#include <unordered_set>
 #include <string>
 
 #include "page.h"
@@ -17,7 +17,7 @@ class Memory {
         // a set is the right data structure to use here, but we keep getting
         // weird errors at runtime
         std::map <uint64_t, int> dirty_counter;
-        std::set <uint64_t> dirty;
+        std::unordered_set <uint64_t> dirty;
         std::map <uint64_t, Page *> pages;
 
         uint64_t g_page_address (uint64_t address, int bits);

@@ -24,6 +24,7 @@ void Kernel :: syscall (std::map <uint64_t, SymbolicValue> & variables, Memory &
 
 void Kernel :: sys_getpid (std::map <uint64_t, SymbolicValue> & variables, Memory & memory)
 {
-    SymbolicValueCmpLtu pid(SymbolicValue(64), SymbolicValue(64, 1 << 16));
+    //SymbolicValueCmpLtu pid(SymbolicValue(64), SymbolicValue(64, 1 << 16));
+    SymbolicValue pid(64, 5000);
     variables[InstructionOperand::str_to_id("UD_R_RAX")] = pid;
 }

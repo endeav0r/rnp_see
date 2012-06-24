@@ -93,15 +93,19 @@ Elf * Elf :: Get (std::string filename)
     uint8_t tmp[1024];
 
     fh = fopen(filename.c_str(), "rb");
-    if (fh == NULL) throw std::runtime_error("could not open file: " + filename);
+    if (fh == NULL)
+        throw std::runtime_error("could not open file: " + filename);
 
     fseek(fh, 0, SEEK_END);
     filesize = ftell(fh);
     fseek(fh, 0, SEEK_SET);
 
-    if (filesize < 1024) throw std::runtime_error("elf < 1kb?");
+    if (filesize < 1024)
+        throw std::runtime_error("elf < 1kb?");
 
-    fread(tmp, 1, 1024, fh);
+    size_t bytes_read = fread(tmp, 1, 1024, fh);
+    if (bytes_read != 1024)
+        return NULL;
 
     fclose(fh);
 
@@ -147,7 +151,9 @@ void Elf64 :: load ()
     fseek(fh, 0, SEEK_SET);
 
     data = new uint8_t[data_size];
-    fread((void *) data, 1, data_size, fh);
+    size_t bytes_read = fread((void *) data, 1, data_size, fh);
+    if (bytes_read != data_size)
+        throw std::runtime_error("read wrong # bytes in Elf64 :: load");
 
     fclose(fh);
 
@@ -341,10 +347,8 @@ const Elf64Symbol Elf64 :: find_symbol_glob (const std::string name, Elf64 & elf
 void Elf64 :: load_dependencies ()
 {
     // load dependency files
-    uint64_t offset = 0x7f000000;
-    offset <<= 32;
-    uint64_t offset_add = 0x00100000;
-    offset_add <<= 32;
+    uint64_t offset = ELF64_DEP_ADDR;
+
     std::list <std::string> new_deps = g_dependencies();
     std::list <std::string> loaded;
 
@@ -367,7 +371,7 @@ void Elf64 :: load_dependencies ()
 
             loaded.push_back(*it);
 
-            offset += offset_add;
+            offset += ELF64_DEP_ADD;
 
             #ifdef DEBUG
                 std::cerr << "loading dependency: " << *it 
@@ -440,6 +444,9 @@ void Elf64 :: patch_relocations (Memory & memory, Elf64 & elf)
         }
         else if (it->g_type() == R_X86_64_TPOFF64) {}
         else if (it->g_type() == R_X86_64_DTPMOD64) {}
+
+        // these are performed by libc at runtime
+        // see libc-start.c call to libc_csu_irel()
         else if (it->g_type() == R_X86_64_IRELATIVE) {}
         else {
             std::stringstream ss;
@@ -453,6 +460,7 @@ void Elf64 :: patch_relocations (Memory & memory, Elf64 & elf)
 Elf64 :: Elf64 (const std::string filename)
     : filename(filename), offset(0), dependency(false)
 {
+
     data = NULL;
     load();
 }
@@ -536,11 +544,8 @@ std::map <uint64_t, Page *> Elf64 :: g_pages ()
             }
         }
 
-        // make a page for the stack
-        uint64_t ELF64_STACK_BEGIN = 0x7fff0000;
-        ELF64_STACK_BEGIN <<= 32;
-
-        pages.insert(std::pair<uint64_t, Page *>(ELF64_STACK_BEGIN, new Page(0x10000)));
+        pages.insert(std::pair<uint64_t, Page *>(ELF64_STACK_ADDR, new Page(ELF64_STACK_SIZE)));
+        pages.insert(std::pair<uint64_t, Page *>(ELF64_TLS_ADDR,   new Page(ELF64_TLS_SIZE)));
 
         #ifdef DEBUG
         std::cerr << "fixing pages" << std::endl;
@@ -590,12 +595,10 @@ std::map <uint64_t, SymbolicValue> Elf64 :: g_variables ()
     variables[InstructionOperand::str_to_id("UD_R_R13")] = SymbolicValue(64, 0);
     variables[InstructionOperand::str_to_id("UD_R_R14")] = SymbolicValue(64, 0);
     variables[InstructionOperand::str_to_id("UD_R_R15")] = SymbolicValue(64, 0);
+    variables[InstructionOperand::str_to_id("UD_R_RBP")] = SymbolicValue(64, 0);
 
-    uint64_t RSP = 0x7fff0000;
-    RSP <<= 32;
-    RSP += 0x10000 - 0x100;
-    variables[InstructionOperand::str_to_id("UD_R_RSP")] = SymbolicValue(64, RSP);
-    variables[InstructionOperand::str_to_id("UD_R_RBP")] = SymbolicValue(64, RSP + 20);
+    variables[InstructionOperand::str_to_id("UD_R_FS")]  = SymbolicValue(64, ELF64_FS_INIT);
+    variables[InstructionOperand::str_to_id("UD_R_RSP")] = SymbolicValue(64, ELF64_RSP_INIT);
     variables[InstructionOperand::str_to_id("UD_R_RIP")] = SymbolicValue(64, g_entry());
     return variables;
 }

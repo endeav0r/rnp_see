@@ -18,7 +18,6 @@ class Translator {
     public :
         std::string native_asm (uint8_t * data, int size);
         std::list <Instruction *> translate (uint64_t address, uint8_t * data, size_t size);
-        std::list <Instruction *> translate_all (uint64_t address, uint8_t * data, size_t size);
         
         int register_bits (int reg);
         int register_to64 (int reg);
@@ -40,16 +39,19 @@ class Translator {
         void jle     (ud_t * ud_obj, uint64_t address);
         void jmp     (ud_t * ud_obj, uint64_t address);
         void jnz     (ud_t * ud_obj, uint64_t address);
+        void js      (ud_t * ud_obj, uint64_t address);
         void jz      (ud_t * ud_obj, uint64_t address);
         void lea     (ud_t * ud_obj, uint64_t address);
         void leave   (ud_t * ud_obj, uint64_t address);
         void mov     (ud_t * ud_obj, uint64_t address);
         void movsxd  (ud_t * ud_obj, uint64_t address);
         void movzx   (ud_t * ud_obj, uint64_t address);
+        void mul     (ud_t * ud_obj, uint64_t address);
         void nop     (ud_t * ud_obj, uint64_t address);
         void pop     (ud_t * ud_obj, uint64_t address);
         void push    (ud_t * ud_obj, uint64_t address);
         void ret     (ud_t * ud_obj, uint64_t address);
+        void rol     (ud_t * ud_obj, uint64_t address);
         void sar     (ud_t * ud_obj, uint64_t address);
         void setz    (ud_t * ud_obj, uint64_t address);
         void shr     (ud_t * ud_obj, uint64_t address);
