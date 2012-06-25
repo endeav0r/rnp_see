@@ -3,25 +3,28 @@
 
 #include <inttypes.h>
 
+#include <iostream>
 #include <string>
+
+#include "uint.h"
 
 class SymbolicValue {
     protected :
-        int         bits;
-        uint64_t    value;
-        bool        wild; // all values possible
+        UInt value;
+        bool wild; // all values possible
     
     public :
-        SymbolicValue () : bits(0), value(0), wild(false) {}
-        SymbolicValue (int bits, uint64_t value) : bits(bits), value(value), wild(false) {}
-        SymbolicValue (int bits)                 : bits(bits), value(0),     wild(true) {}
+        SymbolicValue ();
+        SymbolicValue (int bits, uint64_t value64);
+        SymbolicValue (int bits);
+        SymbolicValue (UInt value);
         
         virtual const std::string str () const;
 
-        uint64_t    g_value  () const;
-        int64_t     g_svalue () const;
-        int         g_bits   () const { return bits;  }
-        bool        g_wild   () const { return wild;  }
+        UInt     g_value  () const { return value;            }
+        uint64_t g_uint64 () const { return value.g_value();  }
+        int      g_bits   () const { return value.g_bits();   }
+        bool     g_wild   () const { return wild;             }
 
         const SymbolicValue operator +  (const SymbolicValue & rhs) const;
         const SymbolicValue operator -  (const SymbolicValue & rhs) const;
@@ -39,7 +42,7 @@ class SymbolicValue {
         const SymbolicValue cmpLts      (const SymbolicValue & rhs) const;
         const SymbolicValue cmpLtu      (const SymbolicValue & rhs) const;
 
-        const SymbolicValue signExtend () const;
+        const SymbolicValue signExtend  (int bits) const;
 };
 
 class SymbolicValueNot : public SymbolicValue {

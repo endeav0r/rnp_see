@@ -38,7 +38,7 @@ void VM :: debug_variables ()
     std::map <uint64_t, SymbolicValue> :: iterator it;
     for (it = variables.begin(); it != variables.end(); it++) {
         ss << std::hex << it->first << "=" 
-           << std::hex << it->second.g_value() << std::endl;
+           << it->second.str() << std::endl;
     }
 
     std::cout << ss.str();
@@ -96,7 +96,7 @@ VM :: VM (std::string filename)
 
 void VM :: step ()
 {
-    uint64_t ip_addr = variables[ip_id].g_value();
+    uint64_t ip_addr = variables[ip_id].g_uint64();
     std::list <Instruction *> instructions;
 
     instructions = translator.translate(ip_addr,
@@ -119,7 +119,7 @@ void VM :: step ()
 
     std::list <Instruction *> :: iterator it;
     for (it = instructions.begin(); it != instructions.end(); it++) {
-        //std::cout << (*it)->str() << std::endl;
+        std::cout << (*it)->str() << std::endl;
              EXECUTE(InstructionAdd)
         else EXECUTE(InstructionAnd)
         else EXECUTE(InstructionAssign)
@@ -172,7 +172,7 @@ void VM :: execute (InstructionBrc * brc)
     const SymbolicValue condition = g_value(brc->g_cond());
     if (condition.g_wild())
         throw std::runtime_error("symbolic brc not yet supported");
-    else if (condition.g_value()) {
+    else if (condition.g_uint64()) {
         variables[ip_id] = g_value(brc->g_dst());
     }
 }
@@ -217,19 +217,19 @@ void VM :: execute (InstructionLoad * load)
     switch (src.g_bits()) {
     case 8 :
         variables[dst.g_id()] = SymbolicValue(dst.g_bits(),
-                                              memory.g_byte(src.g_value()));
+                                              memory.g_byte(src.g_uint64()));
         break;
     case 16 :
         variables[dst.g_id()] = SymbolicValue(dst.g_bits(),
-                                              memory.g_word(src.g_value()));
+                                              memory.g_word(src.g_uint64()));
         break;
     case 32 :
         variables[dst.g_id()] = SymbolicValue(dst.g_bits(),
-                                              memory.g_dword(src.g_value()));
+                                              memory.g_dword(src.g_uint64()));
         break;
     case 64 :
         variables[dst.g_id()] = SymbolicValue(dst.g_bits(),
-                                              memory.g_qword(src.g_value()));
+                                              memory.g_qword(src.g_uint64()));
         break;
     default :
         std::stringstream ss;
@@ -271,7 +271,7 @@ void VM :: execute (InstructionShr * shr)
 
 void VM :: execute (InstructionSignExtend * sext)
 {
-    variables[sext->g_dst().g_id()] = g_value(sext->g_src()).signExtend();
+    variables[sext->g_dst().g_id()] = g_value(sext->g_src()).signExtend(sext->g_dst().g_bits());
 }
 
 
@@ -281,10 +281,10 @@ void VM :: execute (InstructionStore * store)
     const SymbolicValue src = g_value(store->g_src());
 
     switch (store->g_bits()) {
-    case 8  : memory.s_byte(dst.g_value(), src.g_value()); break;
-    case 16 : memory.s_word(dst.g_value(), src.g_value()); break;
-    case 32 : memory.s_dword(dst.g_value(), src.g_value()); break;
-    case 64 : memory.s_qword(dst.g_value(), src.g_value()); break;
+    case 8  : memory.s_byte(dst.g_uint64(), src.g_uint64()); break;
+    case 16 : memory.s_word(dst.g_uint64(), src.g_uint64()); break;
+    case 32 : memory.s_dword(dst.g_uint64(), src.g_uint64()); break;
+    case 64 : memory.s_qword(dst.g_uint64(), src.g_uint64()); break;
     default :
         std::stringstream ss;
         ss << "Tried to store invalid bit size: " << store->g_bits();
@@ -307,11 +307,7 @@ void VM :: execute (InstructionSyscall * syscall)
 
 void VM :: execute (InstructionXor * Xor)
 {
-    InstructionOperand dst = Xor->g_dst();
-    const SymbolicValue lhs = g_value(Xor->g_lhs());
-    const SymbolicValue rhs = g_value(Xor->g_rhs());
-
-    variables[dst.g_id()] = SymbolicValue(dst.g_bits(), lhs.g_value() ^ rhs.g_value());
+    variables[Xor->g_dst().g_id()] = g_value(Xor->g_lhs()) ^ g_value(Xor->g_rhs());
 }
 
 void VM :: execute (Instruction * ins) {}

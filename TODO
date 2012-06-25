@@ -1,0 +1,10 @@
+Elf64 :: patch_relocations ()
+    Needs to deal with the following relocations which are currently ignored
+        R_X86_64_TPOFF64
+        R_X86_64_DTPMOD64
+        R_X86_64_IRELATIVE
+
+Translator :: operand_get ()
+    When we have an instruction with a memory load and a segmentation offset, we
+    don't perform a load. So far, the only segmentation instruction I have found
+    are those used in libc inside the macro PTR_MANGLE().

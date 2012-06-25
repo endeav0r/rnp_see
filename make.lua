@@ -62,7 +62,7 @@ function do_config ()
 end
 
 deps = {'elf', 'vm', 'symbolicvalue', 'translator', 'kernel',
-        'debug', 'instruction', 'memory', 'page'}
+        'debug', 'instruction', 'memory', 'page', 'uint'}
 dep_objs = {}
 
 for di, dep in pairs(deps) do

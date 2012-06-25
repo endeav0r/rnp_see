@@ -12,11 +12,11 @@ void Kernel :: syscall (std::map <uint64_t, SymbolicValue> & variables, Memory &
     if (rax.g_wild())
         throw std::runtime_error("syscall called with wild rax");
 
-    switch (rax.g_value()) {
+    switch (rax.g_uint64()) {
         case 0x27 : sys_getpid(variables, memory); break;
         default :
             std::stringstream ss;
-            ss << "unhandled syscall: " << rax.g_value();
+            ss << "unhandled syscall: " << rax.str();
             throw std::runtime_error(ss.str());
     }
 }

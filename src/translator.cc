@@ -75,6 +75,7 @@ std::list <Instruction *> Translator :: translate (uint64_t address, uint8_t * d
         case UD_Iadd     : add     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
         case UD_Iand     : And     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
         case UD_Icall    : call    (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Icdqe    : cdqe    (&ud_obj, address + ud_insn_off(&ud_obj)); break;
         case UD_Icmp     : cmp     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
         case UD_Ihlt     : hlt     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
         case UD_Ija      : ja      (&ud_obj, address + ud_insn_off(&ud_obj)); break;
@@ -120,11 +121,12 @@ std::list <Instruction *> Translator :: translate (uint64_t address, uint8_t * d
 
 int Translator :: register_bits (int reg)
 {
-    if ((reg >= UD_R_AL)  && (reg <= UD_R_R15B)) return 8;
-    if ((reg >= UD_R_AX)  && (reg <= UD_R_R15W)) return 16;
-    if ((reg >= UD_R_EAX) && (reg <= UD_R_R15D)) return 32;
-    if ((reg >= UD_R_RAX) && (reg <= UD_R_R15))  return 64;
-    if ((reg == UD_R_RIP) || (reg == UD_R_FS))   return 64;
+    if ((reg >= UD_R_AL)  && (reg <= UD_R_R15B))    return 8;
+    if ((reg >= UD_R_AX)  && (reg <= UD_R_R15W))    return 16;
+    if ((reg >= UD_R_EAX) && (reg <= UD_R_R15D))    return 32;
+    if ((reg >= UD_R_RAX) && (reg <= UD_R_R15))     return 64;
+    if ((reg == UD_R_RIP) || (reg == UD_R_FS))      return 64;
+    if ((reg >= UD_R_XMM0) && (reg <= UD_R_XMM15)) return 128;
     
     throw std::runtime_error("invalid register for register_bits");
     return -1;
@@ -164,6 +166,19 @@ int Translator :: register_to64 (int reg)
                              + "register_to64 called on unsupported register: " 
                              + ud_type_DEBUG[reg]);
     return -1;
+}
+
+std::string register128_name (int reg, bool low)
+{
+    if ((reg >= UD_R_XMM0) && (reg <= UD_R_XMM15)) {
+        std::string name = ud_type_DEBUG[reg];
+        if (low)
+            name += "_low";
+        else
+            name += "_high";
+        return name;
+    }
+    throw std::runtime_error("invalid register for register128_name");
 }
 
 
@@ -230,13 +245,25 @@ InstructionOperand Translator :: operand (ud_t * ud_obj, int operand_i, uint64_t
         std::string name = ud_type_DEBUG[register_to64(ud_obj->pfx_seg)];
         InstructionOperand seg(OPTYPE_VAR, register_bits(ud_obj->pfx_seg), name);
 
-        InstructionOperand offset(OPTYPE_CONSTANT,
-                                  operand.offset,
-                                  operand_lval(operand.offset, operand));
+        if (operand.offset) {
+            InstructionOperand offset(OPTYPE_CONSTANT,
+                                      operand.offset,
+                                      operand_lval(operand.offset, operand));
 
-        InstructionOperand result(OPTYPE_VAR, 64);
-        instructions.push_back(new InstructionAdd(address, size, result, seg, offset));
-        return result;
+            InstructionOperand result(OPTYPE_VAR, 64);
+            instructions.push_back(new InstructionAdd(address, size, result, seg, offset));
+            return result;
+        }
+        else if (operand.base) {
+
+            std::string name = ud_type_DEBUG[register_to64(operand.base)];
+            InstructionOperand base(OPTYPE_VAR, register_bits(operand.base), name);
+
+            InstructionOperand result(OPTYPE_VAR, 64);
+            instructions.push_back(new InstructionAdd(address, size, result, seg, base));
+            return result;
+        }
+        return seg;
     }
     else if (operand.type == UD_OP_MEM) {
         InstructionOperand base;
@@ -363,13 +390,15 @@ void Translator :: call (ud_t * ud_obj, uint64_t address)
     InstructionOperand rip     = InstructionOperand(OPTYPE_VAR, 64, "UD_R_RIP");
     InstructionOperand rsp     = InstructionOperand(OPTYPE_VAR, 64, "UD_R_RSP");
     InstructionOperand subsize = InstructionOperand(OPTYPE_CONSTANT, 8, STACK_ELEMENT_SIZE);
+
+    // we must get the dst before messing with rsp for call [rsp+offset]
+    InstructionOperand dst = operand_get(ud_obj, 0, address);
     
     // push RIP
     instructions.push_back(new InstructionSub(address, ud_insn_len(ud_obj), rsp, rsp, subsize));
     instructions.push_back(new InstructionStore(address, ud_insn_len(ud_obj), 64, rsp, rip));
 
     // set RIP += offset
-    InstructionOperand dst = operand_get(ud_obj, 0, address);
     InstructionOperand off = InstructionOperand(OPTYPE_VAR, 64);
     InstructionOperand one = InstructionOperand(OPTYPE_CONSTANT, 1, 1);
 
@@ -381,7 +410,14 @@ void Translator :: call (ud_t * ud_obj, uint64_t address)
     else {
         instructions.push_back(new InstructionBrc(address, ud_insn_len(ud_obj), one, dst));
     }
+}
 
+void Translator :: cdqe (ud_t * ud_obj, uint64_t address)
+{
+    InstructionOperand rax (OPTYPE_VAR, 64, "UD_R_RAX");
+    InstructionOperand eax (OPTYPE_VAR, 32, "UD_R_RAX");
+
+    instructions.push_back(new InstructionSignExtend(address, ud_insn_len(ud_obj), rax, eax));
 }
 
 
@@ -587,6 +623,7 @@ void Translator :: leave (ud_t * ud_obj, uint64_t address)
 
 void Translator :: mov (ud_t * ud_obj, uint64_t address)
 {
+    std::cerr << ins_debug_str(ud_obj) << std::endl;
     InstructionOperand src = operand_get(ud_obj, 1, address);
     operand_set(ud_obj, 0, address, src);
 }

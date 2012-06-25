@@ -3,36 +3,36 @@
 #include <iostream>
 #include <sstream>
 
-int64_t SymbolicValue :: g_svalue () const
+SymbolicValue :: SymbolicValue ()
 {
-    switch (bits) {
-    case 1  : return (int8_t)  value & 0x1;
-    case 8  : return (int8_t)  value;
-    case 16 : return (int16_t) value;
-    case 32 : return (int32_t) value;
-    case 64 : return (int64_t) value;
-    }
-    return value;
+    wild = false;
+    value = UInt(0);
 }
 
-uint64_t SymbolicValue :: g_value () const
+SymbolicValue :: SymbolicValue (int bits, uint64_t value64)
 {
-    switch (bits) {
-    case 1  : return (uint8_t)  value & 0x1;
-    case 8  : return (uint8_t)  value;
-    case 16 : return (uint16_t) value;
-    case 32 : return (uint32_t) value;
-    case 64 : return (uint64_t) value;
-    }
-    return value;
+    wild = false;
+    value = UInt(bits, value64);
+}
+
+SymbolicValue :: SymbolicValue (int bits)
+{
+    wild = true;
+    value = UInt(bits);
+}
+
+SymbolicValue :: SymbolicValue (UInt value)
+{
+    wild = false;
+    this->value = value;
 }
 
 const std::string SymbolicValue :: str () const
 {
     std::stringstream ss;
 
-    if (wild) ss << "(" << bits << " wild)";
-    else ss << "(" << bits << " 0x" << std::hex << this->g_value() << ")";
+    if (wild) ss << "(" << g_bits() << " wild)";
+    else ss << "(" << g_bits() << " " << value.str() << ")";
     
     return ss.str();
 }
@@ -64,20 +64,20 @@ SVSTR(^,   SymbolicValueXor)
 
 const SymbolicValue SymbolicValue :: operator~ () const
 {
-    if (not wild) return SymbolicValue(this->bits, ~(this->value));
+    if (not wild) return SymbolicValue(~value);
     else return SymbolicValueNot(*this);
 }
 
-const SymbolicValue SymbolicValue :: signExtend () const
+const SymbolicValue SymbolicValue :: signExtend (int bits) const
 {
-    return SymbolicValue(64, g_svalue());
+    return SymbolicValue(value.sign_extend(bits));
 }
 
 #define SVOPERATOR(OPER, CLASS) \
 const SymbolicValue SymbolicValue :: operator OPER (const SymbolicValue & rhs) const \
 {                                                                                 \
     if ((not this->wild) && (not rhs.wild))                                       \
-        return SymbolicValue(this->bits, this->g_value() OPER rhs.g_value());             \
+        return SymbolicValue(this->g_value() OPER rhs.g_value());             \
     else                                                                          \
         return CLASS(*this, rhs);                                                 \
 }
@@ -108,7 +108,7 @@ SVCMP(==, SymbolicValueEq)
 const SymbolicValue SymbolicValue :: cmpLes (const SymbolicValue & rhs) const
 {
     if ((not this->wild) && (not rhs.wild)) {
-        if (g_svalue() <= rhs.g_svalue()) return SymbolicValue(1, 1);
+        if (value.g_svalue() <= rhs.value.g_svalue()) return SymbolicValue(1, 1);
         else return SymbolicValue(1, 0);
     }
     else
@@ -128,7 +128,7 @@ const SymbolicValue SymbolicValue :: cmpLeu (const SymbolicValue & rhs) const
 const SymbolicValue SymbolicValue :: cmpLts (const SymbolicValue & rhs) const
 {
     if ((not this->wild) && (not rhs.wild)) {
-        if (g_svalue() < rhs.g_svalue()) return SymbolicValue(1, 1);
+        if (value.g_svalue() < rhs.value.g_svalue()) return SymbolicValue(1, 1);
         else return SymbolicValue(1, 0);
     }
     else
