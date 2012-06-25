@@ -4,7 +4,8 @@ Elf64 :: patch_relocations ()
         R_X86_64_DTPMOD64
         R_X86_64_IRELATIVE
 
-Translator :: operand_get ()
-    When we have an instruction with a memory load and a segmentation offset, we
-    don't perform a load. So far, the only segmentation instruction I have found
-    are those used in libc inside the macro PTR_MANGLE().
+Translator :: translate ()
+    movqa is an ALIGNED movq. Need a way to deal with this at runtime. Currently
+    movqa instructions just calls movq.
+
+udis86 incorrectly detects movdqa instruction as movqa. submit bug report.

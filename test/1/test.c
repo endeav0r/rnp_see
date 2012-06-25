@@ -15,8 +15,7 @@ int strcpy2 (char * dst, char * src)
 int main (int argc, char * argv[])
 {
     char string[32];
-    strcpy2(string, "Hello ");
-    strcpy2(string, argv[1]);
+    strcpy2(string, "david");
     printf("hello %s", string);
     return 0;
 }

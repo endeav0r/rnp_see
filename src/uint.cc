@@ -17,13 +17,13 @@ UInt :: UInt (int bits)
     this->value = 0;
 }
 
-UInt :: UInt (int bits, __uint128_t value)
+UInt :: UInt (int bits, uint64_t value)
 {
     this->bits  = bits;
     this->value = value;
 }
 
-__uint128_t UInt :: g_value () const
+__uint128_t UInt :: g_value128 () const
 {
     if (bits == 128)
         return value;
@@ -34,7 +34,7 @@ __uint128_t UInt :: g_value () const
     return value & mask;
 }
 
-__int128_t UInt :: g_svalue () const
+__int128_t UInt :: g_svalue128 () const
 {
     switch (bits) {
     case 1   : return value & 1;
@@ -50,13 +50,22 @@ __int128_t UInt :: g_svalue () const
 
 UInt UInt :: sign_extend (int bits) const
 {
-    return UInt(bits, g_svalue());
+    UInt result(bits);
+    result.value = g_svalue128();
+    return result;
+}
+
+UInt UInt :: extend (int bits) const
+{
+    UInt result(bits);
+    result.value = g_value128();
+    return result;
 }
 
 std::string UInt :: str () const
 {
-    uint64_t hi = g_value() >> 64;
-    uint64_t lo = g_value();
+    uint64_t hi = g_value128() >> 64;
+    uint64_t lo = g_value128();
     std::stringstream ss;
     ss << "0x" << std::hex << hi << std::hex << lo;
     return ss.str();
@@ -65,7 +74,7 @@ std::string UInt :: str () const
 #define UINTOPERATOR(OPER) \
 UInt UInt :: operator OPER (const UInt & rhs) const \
 { \
-    return UInt(this->bits, this->g_value() OPER rhs.g_value()); \
+    return UInt(this->bits, this->g_value128() OPER rhs.g_value128()); \
 }
 
 UINTOPERATOR(+)
@@ -87,7 +96,7 @@ UInt UInt :: operator ~ () const
 #define UINTCMPOPERATOR(OPER) \
 bool UInt :: operator OPER (const UInt & rhs) const \
 { \
-    return this->g_value() OPER rhs.g_value(); \
+    return this->g_value128() OPER rhs.g_value128(); \
 }
 
 UINTCMPOPERATOR(<)

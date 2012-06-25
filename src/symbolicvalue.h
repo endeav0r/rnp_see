@@ -21,10 +21,10 @@ class SymbolicValue {
         
         virtual const std::string str () const;
 
-        UInt     g_value  () const { return value;            }
-        uint64_t g_uint64 () const { return value.g_value();  }
-        int      g_bits   () const { return value.g_bits();   }
-        bool     g_wild   () const { return wild;             }
+        UInt     g_value  () const { return value;             }
+        uint64_t g_uint64 () const { return value.g_value64(); }
+        int      g_bits   () const { return value.g_bits();    }
+        bool     g_wild   () const { return wild;              }
 
         const SymbolicValue operator +  (const SymbolicValue & rhs) const;
         const SymbolicValue operator -  (const SymbolicValue & rhs) const;

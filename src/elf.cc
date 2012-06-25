@@ -596,6 +596,10 @@ std::map <uint64_t, SymbolicValue> Elf64 :: g_variables ()
     variables[InstructionOperand::str_to_id("UD_R_R14")] = SymbolicValue(64, 0);
     variables[InstructionOperand::str_to_id("UD_R_R15")] = SymbolicValue(64, 0);
     variables[InstructionOperand::str_to_id("UD_R_RBP")] = SymbolicValue(64, 0);
+    variables[InstructionOperand::str_to_id("UD_R_XMM0")] = SymbolicValue(128, 0);
+    variables[InstructionOperand::str_to_id("UD_R_XMM1")] = SymbolicValue(128, 0);
+    variables[InstructionOperand::str_to_id("UD_R_XMM2")] = SymbolicValue(128, 0);
+    variables[InstructionOperand::str_to_id("UD_R_XMM3")] = SymbolicValue(128, 0);
 
     variables[InstructionOperand::str_to_id("UD_R_FS")]  = SymbolicValue(64, ELF64_FS_INIT);
     variables[InstructionOperand::str_to_id("UD_R_RSP")] = SymbolicValue(64, ELF64_RSP_INIT);

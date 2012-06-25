@@ -17,17 +17,19 @@ void VM :: debug_x86_registers ()
     #define PRINTREG(XX) << XX << "=" \
                          << std::hex << GVALUE(XX) << std::endl
     
-    ss PRINTREG("UD_R_RAX") PRINTREG("UD_R_RBX")
-       PRINTREG("UD_R_RCX") PRINTREG("UD_R_RDX")
-       PRINTREG("UD_R_RDI") PRINTREG("UD_R_RSI")
-       PRINTREG("UD_R_RBP") PRINTREG("UD_R_RSP")
-       PRINTREG("UD_R_R8")  PRINTREG("UD_R_R9")
-       PRINTREG("UD_R_R10") PRINTREG("UD_R_R11") 
-       PRINTREG("UD_R_R12") PRINTREG("UD_R_R13")
-       PRINTREG("UD_R_R14") PRINTREG("UD_R_R15")
-       PRINTREG("UD_R_RIP") PRINTREG("ZF")
-       PRINTREG("OF")       PRINTREG("CF")
-       PRINTREG("SF")       PRINTREG("UD_R_FS");
+    ss PRINTREG("UD_R_RAX")  PRINTREG("UD_R_RBX")
+       PRINTREG("UD_R_RCX")  PRINTREG("UD_R_RDX")
+       PRINTREG("UD_R_RDI")  PRINTREG("UD_R_RSI")
+       PRINTREG("UD_R_RBP")  PRINTREG("UD_R_RSP")
+       PRINTREG("UD_R_R8")   PRINTREG("UD_R_R9")
+       PRINTREG("UD_R_R10")  PRINTREG("UD_R_R11") 
+       PRINTREG("UD_R_R12")  PRINTREG("UD_R_R13")
+       PRINTREG("UD_R_R14")  PRINTREG("UD_R_R15")
+       PRINTREG("UD_R_RIP")  PRINTREG("ZF")
+       PRINTREG("OF")        PRINTREG("CF")
+       PRINTREG("UD_R_XMM0") PRINTREG("UD_R_XMM1")
+       PRINTREG("UD_R_XMM2") PRINTREG("UD_R_XMM3")
+       PRINTREG("SF")        PRINTREG("UD_R_FS");
     std::cout << ss.str();
 }
 
@@ -162,8 +164,9 @@ void VM :: execute (InstructionAnd * And)
 void VM :: execute (InstructionAssign * assign)
 {
     InstructionOperand dst  = assign->g_dst();
-    const SymbolicValue src = g_value(assign->g_src());
-    variables[dst.g_id()]   = src;
+    SymbolicValue src = g_value(assign->g_src());
+    const SymbolicValue src2 = SymbolicValue(src.g_value().extend(dst.g_bits()));
+    variables[dst.g_id()] = src2;
 }
 
 
@@ -259,7 +262,7 @@ void VM :: execute (InstructionOr * Or)
 
 void VM :: execute (InstructionShl * shl)
 {
-    variables[shl->g_dst().g_id()] = g_value(shl->g_lhs()) >> g_value(shl->g_rhs());
+    variables[shl->g_dst().g_id()] = g_value(shl->g_lhs()) << g_value(shl->g_rhs());
 }
 
 

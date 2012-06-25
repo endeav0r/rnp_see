@@ -3,6 +3,7 @@
 #include <udis86.h>
 
 #include <cstdio>
+#include <cstring>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
@@ -72,37 +73,48 @@ std::list <Instruction *> Translator :: translate (uint64_t address, uint8_t * d
     
     if (ud_disassemble(&ud_obj)) {
         switch (ud_obj.mnemonic) {
-        case UD_Iadd     : add     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
-        case UD_Iand     : And     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
-        case UD_Icall    : call    (&ud_obj, address + ud_insn_off(&ud_obj)); break;
-        case UD_Icdqe    : cdqe    (&ud_obj, address + ud_insn_off(&ud_obj)); break;
-        case UD_Icmp     : cmp     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
-        case UD_Ihlt     : hlt     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
-        case UD_Ija      : ja      (&ud_obj, address + ud_insn_off(&ud_obj)); break;
-        case UD_Ijl      : jl      (&ud_obj, address + ud_insn_off(&ud_obj)); break;
-        case UD_Ijle     : jle     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
-        case UD_Ijmp     : jmp     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
-        case UD_Ijnz     : jnz     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
-        case UD_Ijs      : js      (&ud_obj, address + ud_insn_off(&ud_obj)); break;
-        case UD_Ijz      : jz      (&ud_obj, address + ud_insn_off(&ud_obj)); break;
-        case UD_Ilea     : lea     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
-        case UD_Ileave   : leave   (&ud_obj, address + ud_insn_off(&ud_obj)); break;
-        case UD_Imov     : mov     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
-        case UD_Imovzx   : movzx   (&ud_obj, address + ud_insn_off(&ud_obj)); break;
-        case UD_Imovsxd  : movsxd  (&ud_obj, address + ud_insn_off(&ud_obj)); break;
-        case UD_Imul     : mul     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
-        case UD_Inop     : nop     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
-        case UD_Ipop     : pop     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
-        case UD_Ipush    : push    (&ud_obj, address + ud_insn_off(&ud_obj)); break;
-        case UD_Iret     : ret     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
-        case UD_Irol     : rol     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
-        case UD_Isar     : sar     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
-        case UD_Isetz    : setz    (&ud_obj, address + ud_insn_off(&ud_obj)); break;
-        case UD_Ishr     : shr     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
-        case UD_Isub     : sub     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
-        case UD_Isyscall : syscall (&ud_obj, address + ud_insn_off(&ud_obj)); break;
-        case UD_Itest    : test    (&ud_obj, address + ud_insn_off(&ud_obj)); break;
-        case UD_Ixor     : Xor     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Iadd       : add       (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Iand       : And       (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Ibsf       : bsf       (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Icall      : call      (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Icdqe      : cdqe      (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Icmp       : cmp       (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Ihlt       : hlt       (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Ija        : ja        (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Ijl        : jl        (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Ijle       : jle       (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Ijmp       : jmp       (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Ijnz       : jnz       (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Ijs        : js        (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Ijz        : jz        (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Ilea       : lea       (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Ileave     : leave     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Imov       : mov       (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Imovd      : movd      (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Imovq      : movq      (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Imovqa     : movqa     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Imovzx     : movzx     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Imovsxd    : movsxd    (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Imul       : mul       (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Inop       : nop       (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Ior        : Or        (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Ipcmpeqb   : pcmpeqb   (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Ipmovmskb  : pmovmskb  (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Ipop       : pop       (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Ipshufd    : pshufd    (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Ipunpcklbw : punpcklbw (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Ipush      : push      (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Ipxor      : pxor      (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Iret       : ret       (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Irol       : rol       (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Isar       : sar       (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Isetz      : setz      (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Ishl       : shl       (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Ishr       : shr       (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Isub       : sub       (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Isyscall   : syscall   (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Itest      : test      (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Ixor       : Xor       (&ud_obj, address + ud_insn_off(&ud_obj)); break;
         default :
             std::stringstream ss;
             ss << "unhandled instruction ["
@@ -159,6 +171,8 @@ int Translator :: register_to64 (int reg)
     else if ((reg >= UD_R_EAX) && (reg <= UD_R_R15D))
         return reg + (UD_R_RAX - UD_R_EAX);
     else if ((reg >= UD_R_RAX) && (reg <= UD_R_R15))
+        return reg;
+    else if ((reg >= UD_R_XMM0) && (reg <= UD_R_XMM15))
         return reg;
     else if ((reg == UD_R_FS) || (reg == UD_R_RIP)) return reg;
 
@@ -382,6 +396,40 @@ void Translator :: And (ud_t * ud_obj, uint64_t address)
     instructions.push_back(new InstructionCmpLts(address, size, SF, tmp, zero));
     
     operand_set(ud_obj, 0, address, tmp);
+}
+
+// destination must be register according to intel docs
+void Translator :: bsf (ud_t * ud_obj, uint64_t address)
+{
+    size_t size = ud_insn_len(ud_obj);
+
+    InstructionOperand dst = operand_get(ud_obj, 0, address);
+    InstructionOperand src = operand_get(ud_obj, 1, address);
+
+    InstructionOperand one        (OPTYPE_CONSTANT, src.g_bits(), 1);
+    InstructionOperand result_set (OPTYPE_VAR, 1);
+    InstructionOperand result_set_inverse (OPTYPE_VAR, 1);
+    InstructionOperand zero       (OPTYPE_CONSTANT, src.g_bits(), 0);
+    InstructionOperand bit        (OPTYPE_VAR, 1);
+    InstructionOperand bitLocMul  (OPTYPE_VAR, 8);
+
+    instructions.push_back(new InstructionAssign(address, size, dst, zero));
+    instructions.push_back(new InstructionAssign(address, size, result_set, zero));
+    for (int i = 0; i < src.g_bits(); i++) {
+        // get bit for this location
+        InstructionOperand bitLoc (OPTYPE_CONSTANT, 8, i);
+        instructions.push_back(new InstructionShr(address, size, bit, src, bitLoc));
+        instructions.push_back(new InstructionAnd(address, size, bit, bit, one));
+        // multiply location by bit, setting bitLocMul to 0 if bit not set
+        instructions.push_back(new InstructionMul(address, size, bitLocMul, bitLoc, bit));
+        // if result_set is not set, set result to the multiplied location
+        instructions.push_back(new InstructionNot(address, size, result_set_inverse, result_set));
+        instructions.push_back(new InstructionMul(address,   size, bitLocMul,
+                                                  bitLocMul, result_set_inverse));
+        instructions.push_back(new InstructionOr(address, size, dst, dst, bitLocMul));
+        // set result_set if not set yet
+        instructions.push_back(new InstructionOr(address, size, result_set, result_set, bit));
+    }
 }
 
 void Translator :: call (ud_t * ud_obj, uint64_t address)
@@ -623,9 +671,60 @@ void Translator :: leave (ud_t * ud_obj, uint64_t address)
 
 void Translator :: mov (ud_t * ud_obj, uint64_t address)
 {
-    std::cerr << ins_debug_str(ud_obj) << std::endl;
     InstructionOperand src = operand_get(ud_obj, 1, address);
     operand_set(ud_obj, 0, address, src);
+}
+
+
+void Translator :: movd (ud_t * ud_obj, uint64_t address)
+{
+    InstructionOperand src = operand_get(ud_obj, 1, address);
+    operand_set(ud_obj, 0, address, src);
+}
+
+
+void Translator :: movdqa (ud_t * ud_obj, uint64_t address)
+{
+    size_t size = ud_insn_len(ud_obj);
+    InstructionOperand dst = operand(ud_obj, 0, address);
+    InstructionOperand src = operand(ud_obj, 1, address);
+
+    if (ud_obj->operand[0].type == UD_OP_MEM)
+        instructions.push_back(new InstructionStore(address, size, 128, dst, src));
+    else if (ud_obj->operand[1].type == UD_OP_MEM)
+        instructions.push_back(new InstructionLoad(address, size, 128, dst, src));
+    else
+        instructions.push_back(new InstructionAssign(address, size, dst, src));
+}
+
+
+void Translator :: movq (ud_t * ud_obj, uint64_t address)
+{
+    size_t size = ud_insn_len(ud_obj);
+    InstructionOperand dst = operand(ud_obj, 0, address);
+    InstructionOperand src = operand(ud_obj, 1, address);
+
+    if (ud_obj->operand[0].type == UD_OP_MEM)
+        instructions.push_back(new InstructionStore(address, size, 64, dst, src));
+    else if (ud_obj->operand[1].type == UD_OP_MEM)
+        instructions.push_back(new InstructionLoad(address, size, 64, dst, src));
+    else
+        instructions.push_back(new InstructionAssign(address, size, dst, src));
+}
+
+
+void Translator :: movqa (ud_t * ud_obj, uint64_t address)
+{
+    // udis86 does not properly detect movdqa
+    if (    (ud_insn_len(ud_obj) > 3)
+         && (ud_insn_ptr(ud_obj)[0] = 0x66)
+         && (ud_insn_ptr(ud_obj)[1] = 0x0f)
+         && (ud_insn_ptr(ud_obj)[2] = 0x6f)) {
+        movdqa(ud_obj, address);
+    }
+    else
+        throw std::runtime_error(std::string("unsupported movqa: ")
+                                 + ud_insn_hex(ud_obj));
 }
 
 
@@ -739,6 +838,85 @@ void Translator :: nop (ud_t * ud_obj, uint64_t address)
 }
 
 
+void Translator :: Or (ud_t * ud_obj, uint64_t address)
+{
+
+    InstructionOperand src = operand_get(ud_obj, 0, address);
+    InstructionOperand dst = operand_get(ud_obj, 1, address);
+    InstructionOperand tmp (OPTYPE_VAR, 64, 0);
+
+    instructions.push_back(new InstructionOr(address, ud_insn_len(ud_obj), tmp, dst, src));
+
+    operand_set(ud_obj, 0, address, tmp);
+}
+
+
+void Translator :: pcmpeqb (ud_t * ud_obj, uint64_t address)
+{
+    size_t size = ud_insn_len(ud_obj);
+    InstructionOperand dst = operand_get(ud_obj, 0, address);
+    InstructionOperand src = operand_get(ud_obj, 1, address);
+
+    InstructionOperand result (OPTYPE_VAR, src.g_bits());
+    InstructionOperand zero   (OPTYPE_CONSTANT, src.g_bits(), 0);
+    instructions.push_back(new InstructionAssign(address, size, result, zero));
+
+    InstructionOperand byte_mask (OPTYPE_CONSTANT, src.g_bits(), 0xff);
+    InstructionOperand src_byte  (OPTYPE_VAR, src.g_bits());
+    InstructionOperand dst_byte  (OPTYPE_VAR, src.g_bits());
+
+    InstructionOperand byte_cmp (OPTYPE_VAR, 1);
+
+    InstructionOperand mask (OPTYPE_VAR, src.g_bits());
+
+    for (int i = 0; i < src.g_bits() / 8; i++) {
+        InstructionOperand shift (OPTYPE_CONSTANT, 8, i * 8);
+        // isolate bytes
+        instructions.push_back(new InstructionShr(address, size, src_byte, src, shift));
+        instructions.push_back(new InstructionShr(address, size, dst_byte, dst, shift));
+        instructions.push_back(new InstructionAnd(address, size, src_byte, src_byte, byte_mask));
+        instructions.push_back(new InstructionAnd(address, size, dst_byte, dst_byte, byte_mask));
+        // compare bytes
+        instructions.push_back(new InstructionCmpEq(address, size, byte_cmp, src_byte, dst_byte));
+        // create mask
+        instructions.push_back(new InstructionMul(address, size, mask, byte_mask, byte_cmp));
+        // move mask into proper location
+        instructions.push_back(new InstructionShl(address, size, mask, mask, shift));
+        // set mask in result
+        instructions.push_back(new InstructionOr(address, size, result, result, mask));
+    }
+
+    operand_set(ud_obj, 0, address, result);
+}
+
+
+void Translator :: pmovmskb (ud_t * ud_obj, uint64_t address)
+{
+    size_t size = ud_insn_len(ud_obj);
+
+    InstructionOperand dst = operand_get(ud_obj, 0, address);
+    InstructionOperand src = operand_get(ud_obj, 1, address);
+
+    InstructionOperand result (OPTYPE_VAR, dst.g_bits());
+    InstructionOperand zero   (OPTYPE_CONSTANT, dst.g_bits(), 0);
+    instructions.push_back(new InstructionAssign(address, size, result, zero));
+
+    InstructionOperand tmp (OPTYPE_VAR, src.g_bits());
+    for (int i = 0; i < src.g_bits() / 8; i++) {
+        InstructionOperand isolateShift(OPTYPE_CONSTANT, 8, 7 + (i * 8));
+        // isolate proper bit
+        instructions.push_back(new InstructionShr(address, size, tmp, src, isolateShift));
+        // move bit to final location
+        InstructionOperand finalShift(OPTYPE_CONSTANT, 8, i);
+        instructions.push_back(new InstructionShl(address, size, tmp, tmp, finalShift));
+        // or with result
+        instructions.push_back(new InstructionOr(address, size, result, result, tmp));
+    }
+
+    operand_set(ud_obj, 0, address, result);
+}
+
+
 void Translator :: pop (ud_t * ud_obj, uint64_t address)
 {
     size_t size;
@@ -757,6 +935,81 @@ void Translator :: pop (ud_t * ud_obj, uint64_t address)
 }
 
 
+void Translator :: pshufd (ud_t * ud_obj, uint64_t address)
+{
+    size_t size = ud_insn_len(ud_obj);
+
+    InstructionOperand dst = operand_get(ud_obj, 0, address);
+    InstructionOperand src = operand_get(ud_obj, 1, address);
+    InstructionOperand order = operand_get(ud_obj, 2, address);
+    InstructionOperand mask (OPTYPE_CONSTANT, 128, 0xffffffff);
+
+    InstructionOperand tmp    (OPTYPE_VAR, 128);
+    InstructionOperand result (OPTYPE_VAR, 128);
+    InstructionOperand zero   (OPTYPE_CONSTANT, 128, 0);
+    instructions.push_back(new InstructionAssign(address, size, result, zero));
+
+    InstructionOperand selector (OPTYPE_VAR, 32);
+    InstructionOperand three    (OPTYPE_CONSTANT, 8, 0x3);
+    InstructionOperand threetwo (OPTYPE_CONSTANT, 8, 32);
+    for (int i = 0; i < 4; i++) {
+        InstructionOperand shiftr (OPTYPE_CONSTANT, 8, i * 2);
+        InstructionOperand shiftl (OPTYPE_CONSTANT, 8, i * 32);
+        // shift the order and mask it to find 2-bit index of dword in src
+        instructions.push_back(new InstructionShr(address, size, selector, order, shiftr));
+        instructions.push_back(new InstructionAnd(address, size, selector, selector, three));
+        // multiply dword index by 32 and shift src right so target dword is lower 32-bits
+        instructions.push_back(new InstructionMul(address, size, selector, selector, threetwo));
+        instructions.push_back(new InstructionShr(address, size, tmp, src, selector));
+        // mask lower 32-bits
+        instructions.push_back(new InstructionAnd(address, size, tmp, tmp, mask));
+        // move these bits to their correct location where they will reside in result
+        instructions.push_back(new InstructionShl(address, size, tmp, tmp, shiftl));
+        // or these bits to result
+        instructions.push_back(new InstructionOr (address, size, result, result, tmp));
+    }
+
+    operand_set(ud_obj, 0, address, result);
+}
+
+
+void Translator :: punpcklbw (ud_t * ud_obj, uint64_t address)
+{
+    size_t size = ud_insn_len(ud_obj);
+    InstructionOperand dst = operand_get(ud_obj, 0, address);
+    InstructionOperand src = operand_get(ud_obj, 1, address);
+    InstructionOperand result (OPTYPE_VAR, 128, 0);
+
+    if (dst.g_bits() == 128) {
+        InstructionOperand tmpsrc   (OPTYPE_VAR, 128, 0);
+        InstructionOperand tmpdst   (OPTYPE_VAR, 128, 0);
+        InstructionOperand result_zero (OPTYPE_CONSTANT, 128, 0);
+        instructions.push_back(new InstructionAssign(address, size, result, result_zero));
+        for (int i = 0; i < 8; i++) {
+            InstructionOperand mask_src (OPTYPE_CONSTANT, 64, 0xFFULL << (8 * i));
+            InstructionOperand mask_dst (OPTYPE_CONSTANT, 64, 0xFFULL << (8 * i));
+            InstructionOperand shift    (OPTYPE_CONSTANT, 8, 8 * i);
+            InstructionOperand shift8   (OPTYPE_CONSTANT, 8, 8);
+
+            // mask the appropriate bits and move them so the src bits are one byte
+            // left of the dst bits
+            instructions.push_back(new InstructionAnd(address, size, tmpsrc, src,    mask_src));
+            instructions.push_back(new InstructionAnd(address, size, tmpdst, dst,    mask_dst));
+            instructions.push_back(new InstructionShl(address, size, tmpsrc, tmpsrc, shift8));
+            // or the tmpsrc and tmpdst together into one variable
+            instructions.push_back(new InstructionOr (address, size, tmpdst, tmpdst, tmpsrc));
+            // shift left and or with result
+            instructions.push_back(new InstructionShl(address, size, tmpdst, tmpdst, shift));
+            instructions.push_back(new InstructionOr (address, size, result, result, tmpdst));
+        }
+    }
+    else {
+        throw std::runtime_error("punpcklbw not supported on dst operand size");
+    }
+    operand_set(ud_obj, 0, address, result);
+}
+
+
 void Translator :: push (ud_t * ud_obj, uint64_t address)
 {
     size_t size;
@@ -770,6 +1023,19 @@ void Translator :: push (ud_t * ud_obj, uint64_t address)
     
     instructions.push_back(new InstructionSub(address, ud_insn_len(ud_obj), rsp, rsp, subsize));
     instructions.push_back(new InstructionStore(address, ud_insn_len(ud_obj), size, rsp, src));
+}
+
+
+void Translator :: pxor (ud_t * ud_obj, uint64_t address)
+{
+
+    InstructionOperand src = operand_get(ud_obj, 0, address);
+    InstructionOperand dst = operand_get(ud_obj, 1, address);
+    InstructionOperand tmp (OPTYPE_VAR, 128, 0);
+
+    instructions.push_back(new InstructionOr(address, ud_insn_len(ud_obj), tmp, dst, src));
+
+    operand_set(ud_obj, 0, address, tmp);
 }
 
 
@@ -866,6 +1132,48 @@ void Translator :: setz (ud_t * ud_obj, uint64_t address)
     InstructionOperand ZF (OPTYPE_VAR, 1, "ZF");
 
     operand_set(ud_obj, 0, address, ZF);
+}
+
+
+void Translator :: shl (ud_t * ud_obj, uint64_t address)
+{
+    /*
+     * sar family instructions are weird about operands, as a "sar <dst>, 1" instruction
+     * will have an operand size of 0 and cause errors when we call operand_lval
+     */
+    InstructionOperand bits;
+    if (ud_obj->operand[1].size == 0) bits = InstructionOperand(OPTYPE_CONSTANT, 1, 1);
+    else                              bits = operand_get(ud_obj, 1, address);
+    
+    InstructionOperand dst        = operand_get(ud_obj, 0, address);
+    InstructionOperand tmp          (OPTYPE_VAR, dst.g_bits());
+    InstructionOperand one          (OPTYPE_CONSTANT, dst.g_bits(), 1);
+    InstructionOperand zero         (OPTYPE_CONSTANT, dst.g_bits(), 0);
+    
+    int size = ud_insn_len(ud_obj);
+    
+    // CF takes last bit shifted out of dst
+    InstructionOperand CF           (OPTYPE_VAR, 1, "CF");
+    InstructionOperand bitsMinusOne (OPTYPE_VAR,   dst.g_bits());
+    InstructionOperand dstBitsMinusOne (OPTYPE_CONSTANT, dst.g_bits(), dst.g_bits() - 1);
+    instructions.push_back(new InstructionSub(address, size, bitsMinusOne, bits, one));
+    instructions.push_back(new InstructionShl(address, size, tmp, dst, bitsMinusOne));
+    instructions.push_back(new InstructionShr(address, size, CF, tmp, dstBitsMinusOne));
+    
+    // OF is set to 1 if MSB of original dst is same of final dst
+    InstructionOperand OF      (OPTYPE_VAR, 1, "OF");
+    instructions.push_back(new InstructionShl(address, size, tmp, dst, bitsMinusOne));
+    instructions.push_back(new InstructionAnd(address, size, tmp, tmp, dst));
+    instructions.push_back(new InstructionShr(address, size, OF, tmp, dstBitsMinusOne));
+    
+    InstructionOperand SF (OPTYPE_VAR, 1, "SF");
+    instructions.push_back(new InstructionCmpLts(address, size, SF, tmp, zero));
+    
+    InstructionOperand ZF (OPTYPE_VAR, 1, "ZF");
+    instructions.push_back(new InstructionCmpEq(address, size, ZF, tmp, zero));
+    
+    instructions.push_back(new InstructionShl(address, size, tmp, dst, bits));
+    operand_set(ud_obj, 0, address, tmp);
 }
 
 

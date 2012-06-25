@@ -96,8 +96,10 @@ SVOPERATOR(^,  SymbolicValueXor)
 const SymbolicValue SymbolicValue :: operator OPER (const SymbolicValue & rhs) const \
 {                                                                                    \
     if ((not this->wild) && (not rhs.wild)) {                                        \
-        if (this->g_value() OPER rhs.g_value()) return SymbolicValue(1, 1);                  \
-        else return SymbolicValue(1, 0);                                             \
+        if (this->g_value() OPER rhs.g_value())                                      \
+            return SymbolicValue(1, 1);                                              \
+        else                                                                         \
+            return SymbolicValue(1, 0);                                              \
     }                                                                                \
     else                                                                             \
         return CLASS(*this, rhs);                                                    \
@@ -108,8 +110,13 @@ SVCMP(==, SymbolicValueEq)
 const SymbolicValue SymbolicValue :: cmpLes (const SymbolicValue & rhs) const
 {
     if ((not this->wild) && (not rhs.wild)) {
-        if (value.g_svalue() <= rhs.value.g_svalue()) return SymbolicValue(1, 1);
-        else return SymbolicValue(1, 0);
+        int bits = value.g_bits() > rhs.value.g_bits() 
+                   ? value.g_bits() 
+                   : rhs.value.g_bits();
+        if (value.sign_extend(bits) <= rhs.value.sign_extend(bits))
+            return SymbolicValue(1, 1);
+        else
+            return SymbolicValue(1, 0);
     }
     else
         return SymbolicValueCmpLtu(*this, rhs);
@@ -118,8 +125,10 @@ const SymbolicValue SymbolicValue :: cmpLes (const SymbolicValue & rhs) const
 const SymbolicValue SymbolicValue :: cmpLeu (const SymbolicValue & rhs) const
 {
     if ((not this->wild) && (not rhs.wild)) {
-        if (g_value() <= rhs.g_value()) return SymbolicValue(1, 1);
-        else return SymbolicValue(1, 0);
+        if (value <= rhs.value)
+            return SymbolicValue(1, 1);
+        else
+            return SymbolicValue(1, 0);
     }
     else
         return SymbolicValueCmpLtu(*this, rhs);
@@ -128,8 +137,13 @@ const SymbolicValue SymbolicValue :: cmpLeu (const SymbolicValue & rhs) const
 const SymbolicValue SymbolicValue :: cmpLts (const SymbolicValue & rhs) const
 {
     if ((not this->wild) && (not rhs.wild)) {
-        if (value.g_svalue() < rhs.value.g_svalue()) return SymbolicValue(1, 1);
-        else return SymbolicValue(1, 0);
+        int bits = value.g_bits() > rhs.value.g_bits() 
+                   ? value.g_bits() 
+                   : rhs.value.g_bits();
+        if (value.sign_extend(bits) < rhs.value.sign_extend(bits))
+            return SymbolicValue(1, 1);
+        else
+            return SymbolicValue(1, 0);
     }
     else
         return SymbolicValueCmpLts(*this, rhs);
@@ -138,8 +152,10 @@ const SymbolicValue SymbolicValue :: cmpLts (const SymbolicValue & rhs) const
 const SymbolicValue SymbolicValue :: cmpLtu (const SymbolicValue & rhs) const
 {
     if ((not this->wild) && (not rhs.wild)) {
-        if (g_value() < rhs.g_value()) return SymbolicValue(1, 1);
-        else return SymbolicValue(1, 0);
+        if (value < rhs.value)
+            return SymbolicValue(1, 1);
+        else
+            return SymbolicValue(1, 0);
     }
     else
         return SymbolicValueCmpLtu(*this, rhs);

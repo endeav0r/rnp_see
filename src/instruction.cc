@@ -157,7 +157,9 @@ std::string InstructionStore :: str ()
 
 std::string InstructionLoad :: str ()
 {
-    return str_formatter("load", this->dst.str() + " = [" + this->src.str() + "]");
+    std::stringstream ss;
+    ss << this->dst.str() << " = " << bits << "[" << this->src.str() << "]";
+    return str_formatter("load", ss.str());
 }
 
 std::string InstructionCall :: str ()
