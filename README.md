@@ -13,13 +13,12 @@ make.lua is currently configured to use LuaFileSystem. This will only compile ob
 that are older than their sources. You can safely comment out require('lfs') and build
 without this functionality.
 
-Once you have everything set up, run:
-> lua make.lua
+Once you have everything set up, run: `lua make.lua`
 
 Running
 =======
-> cd test/1/
-> ../../see test
+`cd test/1/
+../../see test`
 
 You'll probably need to hit return after running commands
 
