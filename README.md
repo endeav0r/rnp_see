@@ -17,8 +17,9 @@ Once you have everything set up, run: `lua make.lua`
 
 Running
 =======
-`cd test/1/  
-../../see test`
+`cd test/1/`  
+
+`../../see test`
 
 You'll probably need to hit return after running commands
 
