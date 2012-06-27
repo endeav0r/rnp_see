@@ -35,11 +35,15 @@ class Translator {
         void bsf       (ud_t * ud_obj, uint64_t address);
         void call      (ud_t * ud_obj, uint64_t address);
         void cdqe      (ud_t * ud_obj, uint64_t address);
+        void cmova     (ud_t * ud_obj, uint64_t address);
+        void cmovbe    (ud_t * ud_obj, uint64_t address);
         void cmovnz    (ud_t * ud_obj, uint64_t address);
         void cmovs     (ud_t * ud_obj, uint64_t address);
         void cmovz     (ud_t * ud_obj, uint64_t address);
         void cmp       (ud_t * ud_obj, uint64_t address);
         void cmpxchg   (ud_t * ud_obj, uint64_t address);
+        void dec       (ud_t * ud_obj, uint64_t address);
+        void div       (ud_t * ud_obj, uint64_t address);
         void hlt       (ud_t * ud_obj, uint64_t address);
         void ja        (ud_t * ud_obj, uint64_t address);
         void jae       (ud_t * ud_obj, uint64_t address);
@@ -58,6 +62,7 @@ class Translator {
         void mov       (ud_t * ud_obj, uint64_t address);
         void movd      (ud_t * ud_obj, uint64_t address);
         void movdqa    (ud_t * ud_obj, uint64_t address);
+        void movdqu    (ud_t * ud_obj, uint64_t address);
         void movq      (ud_t * ud_obj, uint64_t address);
         void movqa     (ud_t * ud_obj, uint64_t address);
         void movsd     (ud_t * ud_obj, uint64_t address);
@@ -80,6 +85,8 @@ class Translator {
         void ret       (ud_t * ud_obj, uint64_t address);
         void rol       (ud_t * ud_obj, uint64_t address);
         void sar       (ud_t * ud_obj, uint64_t address);
+        void sbb       (ud_t * ud_obj, uint64_t address);
+        void seta      (ud_t * ud_obj, uint64_t address);
         void setnz     (ud_t * ud_obj, uint64_t address);
         void setz      (ud_t * ud_obj, uint64_t address);
         void shl       (ud_t * ud_obj, uint64_t address);

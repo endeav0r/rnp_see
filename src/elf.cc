@@ -523,6 +523,26 @@ Elf64 :: ~Elf64 ()
 }
 
 
+std::string Elf64 :: func_symbol (uint64_t address)
+{
+    std::list <Elf64Symbol> symbols = g_symbols();
+    std::list <Elf64Symbol> :: iterator sit;
+
+    for (sit = symbols.begin(); sit != symbols.end(); sit++) {
+        if (sit->g_address() == address)
+            return sit->g_name();
+    }
+
+    std::list <Elf64 *> :: iterator dit;
+    for (dit = dependencies.begin(); dit != dependencies.end(); dit++) {
+        std::string name = (*dit)->func_symbol(address);
+        if (name != "")
+            return name;
+    }
+    return "";
+}
+
+
 uint64_t Elf64 :: g_entry () { return ehdr->e_entry; }
 
 std::map <uint64_t, Page *> Elf64 :: g_pages ()

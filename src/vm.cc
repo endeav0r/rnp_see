@@ -4,7 +4,6 @@
 #include <sstream>
 #include <stdexcept>
 
-#include "elf.h"
 #include "kernel.h"
 
 #define DEBUG
@@ -67,7 +66,7 @@ VM :: VM (std::string filename)
     std::cerr << "loading ELF" << std::endl;
     #endif
 
-    Elf * elf = Elf::Get(filename);
+    elf = Elf::Get(filename);
 
 
     #ifdef DEBUG
@@ -90,8 +89,6 @@ VM :: VM (std::string filename)
     #endif
     ip_id      = elf->g_ip_id();
 
-    delete elf;
-
     std::cout << "Memory mmap: " << std::endl << memory.memmap() << std::endl;
 }
 
@@ -99,6 +96,7 @@ VM :: VM (std::string filename)
 VM :: ~VM ()
 {
     memory.destroy();
+    delete elf;
 }
 
 
@@ -106,6 +104,11 @@ void VM :: step ()
 {
     uint64_t ip_addr = variables[ip_id].g_uint64();
     std::list <Instruction *> instructions;
+
+    // if there is a symbol name for this location, print it out
+    std::string symbol_name = elf->func_symbol(variables[ip_id].g_uint64());
+    if (symbol_name != "")
+        std::cout << "SYMBOL: " << symbol_name << " :" << std::endl;
 
     instructions = translator.translate(ip_addr,
                                         memory.g_data(ip_addr),
@@ -137,8 +140,10 @@ void VM :: step ()
         else EXECUTE(InstructionCmpLeu)
         else EXECUTE(InstructionCmpLts)
         else EXECUTE(InstructionCmpLtu)
+        else EXECUTE(InstructionDiv)
         else EXECUTE(InstructionLoad)
         else EXECUTE(InstructionNot)
+        else EXECUTE(InstructionMod)
         else EXECUTE(InstructionMul)
         else EXECUTE(InstructionOr)
         else EXECUTE(InstructionShl)
@@ -221,6 +226,13 @@ void VM :: execute (InstructionCmpLtu * cmpltu)
 }
 
 
+void VM :: execute (InstructionDiv * div)
+{
+    variables[div->g_dst().g_id()] = (g_value(div->g_lhs())
+                                      / g_value(div->g_rhs())).extend(div->g_dst().g_bits());
+}
+
+
 void VM :: execute (InstructionLoad * load)
 {
     InstructionOperand dst = load->g_dst();
@@ -255,9 +267,10 @@ void VM :: execute (InstructionLoad * load)
 }
 
 
-void VM :: execute (InstructionNot * Not)
+void VM :: execute (InstructionMod * mod)
 {
-    variables[Not->g_dst().g_id()] = (~ g_value(Not->g_src())).extend(Not->g_dst().g_bits());
+    variables[mod->g_dst().g_id()] = (g_value(mod->g_lhs())
+                                      % g_value(mod->g_rhs())).extend(mod->g_dst().g_bits());
 }
 
 
@@ -265,6 +278,12 @@ void VM :: execute (InstructionMul * mul)
 {
     variables[mul->g_dst().g_id()] = (g_value(mul->g_lhs()) 
                                       * g_value(mul->g_rhs())).extend(mul->g_dst().g_bits());
+}
+
+
+void VM :: execute (InstructionNot * Not)
+{
+    variables[Not->g_dst().g_id()] = (~ g_value(Not->g_src())).extend(Not->g_dst().g_bits());
 }
 
 

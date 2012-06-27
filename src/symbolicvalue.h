@@ -31,6 +31,8 @@ class SymbolicValue {
         const SymbolicValue operator +  (const SymbolicValue & rhs) const;
         const SymbolicValue operator -  (const SymbolicValue & rhs) const;
         const SymbolicValue operator *  (const SymbolicValue & rhs) const;
+        const SymbolicValue operator /  (const SymbolicValue & rhs) const;
+        const SymbolicValue operator %  (const SymbolicValue & rhs) const;
         const SymbolicValue operator &  (const SymbolicValue & rhs) const;
         const SymbolicValue operator |  (const SymbolicValue & rhs) const;
         const SymbolicValue operator ^  (const SymbolicValue & rhs) const;
@@ -80,7 +82,9 @@ SVBINOPCLASS(CmpLes)
 SVBINOPCLASS(CmpLeu)
 SVBINOPCLASS(CmpLts)
 SVBINOPCLASS(CmpLtu)
+SVBINOPCLASS(Div)
 SVBINOPCLASS(Eq)
+SVBINOPCLASS(Mod)
 SVBINOPCLASS(Mul)
 SVBINOPCLASS(Or)
 SVBINOPCLASS(Sub)

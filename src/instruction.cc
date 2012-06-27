@@ -197,6 +197,16 @@ std::string InstructionMul :: str ()
     return binop_str("mul", "*", dst.str(), lhs.str(), rhs.str());
 }
 
+std::string InstructionDiv :: str ()
+{
+    return binop_str("div", "/", dst.str(), lhs.str(), rhs.str());
+}
+
+std::string InstructionMod :: str ()
+{
+    return binop_str("mod", "%", dst.str(), lhs.str(), rhs.str());
+}
+
 
 std::string InstructionAdd :: str ()
 {

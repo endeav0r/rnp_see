@@ -7,6 +7,7 @@ Elf64 :: patch_relocations ()
 Translator :: translate ()
     movqa is an ALIGNED movq. Need a way to deal with this at runtime. Currently
     movqa instructions just calls movq.
+    movdqa just calls movdqu.
 
 udis86 incorrectly detects movdqa instruction as movqa. submit bug report.
 

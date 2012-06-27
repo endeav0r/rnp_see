@@ -25,6 +25,7 @@ class Kernel {
         SYS_FUNC(fstat)
         SYS_FUNC(getpid)
         SYS_FUNC(mmap)
+        SYS_FUNC(write)
 };
 
 #endif

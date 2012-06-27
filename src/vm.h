@@ -1,6 +1,7 @@
 #ifndef vm_HEADER
 #define vm_HEADER
 
+#include "elf.h"
 #include "kernel.h"
 #include "memory.h"
 #include "symbolicvalue.h"
@@ -10,12 +11,14 @@
 
 class VM {
     private :
-        Translator translator;
-        Memory     memory;
         uint64_t   ip_id;
-        Kernel     kernel;
-        std::map <uint64_t, SymbolicValue> variables;
 
+        Elf *      elf;
+        Kernel     kernel;
+        Memory     memory;
+        Translator translator;
+
+        std::map <uint64_t, SymbolicValue> variables;
 
         const SymbolicValue g_value (InstructionOperand operand);
 
@@ -28,9 +31,11 @@ class VM {
         void execute (InstructionCmpLeu *    );
         void execute (InstructionCmpLts *    );
         void execute (InstructionCmpLtu *    );
+        void execute (InstructionDiv    *    );
         void execute (InstructionLoad   *    );
-        void execute (InstructionNot    *    );
+        void execute (InstructionMod    *    );
         void execute (InstructionMul    *    );
+        void execute (InstructionNot    *    );
         void execute (InstructionOr     *    );
         void execute (InstructionShl    *    );
         void execute (InstructionShr    *    );

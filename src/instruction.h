@@ -260,16 +260,13 @@ class Instruction##OPERATION : public InstructionBinOp { \
 INSTRUCTIONBINOPCLASS(Add)
 INSTRUCTIONBINOPCLASS(Sub)
 INSTRUCTIONBINOPCLASS(Mul)
+INSTRUCTIONBINOPCLASS(Div)
+INSTRUCTIONBINOPCLASS(Mod)
 INSTRUCTIONBINOPCLASS(Shl)
 INSTRUCTIONBINOPCLASS(Shr)
 INSTRUCTIONBINOPCLASS(And)
 INSTRUCTIONBINOPCLASS(Or)
 INSTRUCTIONBINOPCLASS(Xor)
-
-class InstructionDiv  : public InstructionBinOp {};
-class InstructionDivs : public InstructionBinOp {};
-class InstructionShrs : public InstructionBinOp {};
-class InstructionMod  : public InstructionBinOp {};
 
 /***********
  * CMPOPS  *

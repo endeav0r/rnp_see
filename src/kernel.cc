@@ -3,12 +3,15 @@
 #include "instruction.h"
 #include "page.h"
 
+#include <cstdio>
 #include <sstream>
 #include <stdexcept>
 
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+
+#define DEBUG
 
 // order of arguments by register
 // %rdi, %rsi, %rdx, %r10, %r8 and %r9
@@ -21,6 +24,7 @@ void Kernel :: syscall (std::map <uint64_t, SymbolicValue> & variables, Memory &
         throw std::runtime_error("syscall called with wild rax");
 
     switch (rax.g_uint64()) {
+        case 0x1  : sys_write (variables, memory); break;
         case 0x5  : sys_fstat (variables, memory); break;
         case 0x9  : sys_mmap  (variables, memory); break;
         case 0x27 : sys_getpid(variables, memory); break;
@@ -90,8 +94,53 @@ void Kernel :: sys_mmap (std::map <uint64_t, SymbolicValue> & variables, Memory 
     Page * page = new Page (mmap_size);
     // insert this page at the next available mmap address and set result to its address
     memory.s_page(next_mmap, page);
-    variables[InstructionOperand::str_to_id("UD_R_RAX")] == SymbolicValue(64, next_mmap);
+    variables[InstructionOperand::str_to_id("UD_R_RAX")] = SymbolicValue(64, next_mmap);
 
     // increase next_mmap
     next_mmap += (mmap_size + 4095) % 4096;
+}
+
+
+void Kernel :: sys_write (std::map <uint64_t, SymbolicValue> & variables, Memory & memory)
+{
+    FILE * fh;
+    std::stringstream filename;
+
+    SymbolicValue rdi = variables[InstructionOperand::str_to_id("UD_R_RDI")];
+    SymbolicValue rsi = variables[InstructionOperand::str_to_id("UD_R_RSI")];
+    SymbolicValue rdx = variables[InstructionOperand::str_to_id("UD_R_RDX")];
+
+    if (    (rdi.g_wild())
+         || (rsi.g_wild())
+         || (rdx.g_wild()))
+        throw std::runtime_error("sys_write called with wild register argument");
+
+    filename << "fh_" << rdi.g_uint64();
+    fh = fopen(filename.str().c_str(), "ab");
+    if (fh == NULL)
+        throw std::runtime_error(std::string("error opening ")
+                                 + filename.str() + " in Kernel::sys_write");
+    if (rdx.g_uint64() > memory.g_data_size(rsi.g_uint64())){
+        std::stringstream ss;
+        ss << "count beyond memory limits in Kernel::sys_write. "
+           << "rdi=" << rdi.str() << ", "
+           << "memory.g_data_size()=" << memory.g_data_size(rsi.g_uint64()) << ", "
+           << "rsi=" << rsi.str() << ", rdx=" << rdx.str();
+        throw std::runtime_error(ss.str());
+    }
+
+    const uint8_t * data = memory.g_data(rsi.g_uint64());
+    size_t written = fwrite(data, 1, rdx.g_uint64(), fh);
+
+    fclose(fh);
+
+    variables[InstructionOperand::str_to_id("UD_R_RAX")] = SymbolicValue(64, written);
+
+    #ifdef DEBUG
+    std::cerr << "SYS_WRITE rdi=" << rdi.str() << ", "
+              << "rsi=" << rsi.str() << ", "
+              << "rdx=" << rdx.str() << ", "
+              << "result_rax=" << variables[InstructionOperand::str_to_id("UD_R_RAX")].str()
+              << std::endl;
+    #endif
 }

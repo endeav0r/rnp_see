@@ -31,7 +31,8 @@ class Elf {
         std::map <uint64_t, Page *> fix_pages (std::multimap <uint64_t, Page *> pages);
     public :
         virtual ~Elf () {};
-        virtual uint64_t g_entry () = 0;
+        virtual std::string                        func_symbol (uint64_t address) = 0;
+        virtual uint64_t                           g_entry     () = 0;
         virtual Memory                             g_memory    () = 0;
         virtual std::map <uint64_t, SymbolicValue> g_variables () = 0;
         virtual uint64_t                           g_ip_id     () = 0;
@@ -139,8 +140,9 @@ class Elf64 : public Elf {
         Elf64  (const std::string filename, uint64_t offset);
         ~Elf64 ();
 
-        std::string g_filename () { return filename; };
-        uint64_t    g_entry    ();
+        std::string                        func_symbol (uint64_t address);
+        std::string                        g_filename  () { return filename; };
+        uint64_t                           g_entry     ();
         Memory                             g_memory    ();
         std::map <uint64_t, SymbolicValue> g_variables ();
         uint64_t                           g_ip_id     ();
