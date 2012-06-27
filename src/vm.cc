@@ -285,7 +285,12 @@ void VM :: execute (InstructionShr * shr)
 
 void VM :: execute (InstructionSignExtend * sext)
 {
-    variables[sext->g_dst().g_id()] = g_value(sext->g_src()).signExtend(sext->g_dst().g_bits());
+    std::cerr << "sign extend dst.g_bits()=" << sext->g_dst().g_bits() << std::endl;
+    // force src variable to be the src size
+    SymbolicValue src = g_value(sext->g_src()).extend(sext->g_src().g_bits());
+    // now sign extend this value to the dst's size
+    SymbolicValue dst = src.signExtend(sext->g_dst().g_bits());
+    variables[sext->g_dst().g_id()] = dst;
 }
 
 
