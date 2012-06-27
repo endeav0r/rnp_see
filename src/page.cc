@@ -5,7 +5,7 @@
 #include <sstream>
 #include <stdexcept>
 
-//#define DEBUG
+#define DEBUG
 
 Page :: Page (size_t size)
 {
@@ -74,6 +74,13 @@ void Page :: s_data (const uint8_t * data, size_t size)
     if (size > this->size)
         throw std::runtime_error("memcpy beyond size of page");
     memcpy(this->data, data, size);
+}
+
+void Page :: s_data (size_t offset, const uint8_t * data, size_t size)
+{
+    if (offset + size > this->size)
+        throw std::runtime_error("memcpy beyond size of page");
+    memcpy(&(this->data[offset]), data, size);
 }
 
 size_t Page :: g_size () { return this->size; }

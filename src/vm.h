@@ -43,6 +43,7 @@ class VM {
 
     public :
         VM (std::string filename);
+        ~VM ();
 
         void step ();
 

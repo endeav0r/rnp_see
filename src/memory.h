@@ -26,7 +26,7 @@ class Memory {
         Memory () {};
         Memory (std::map <uint64_t, Page *> pages) : pages(pages) {};
 
-        ~Memory();
+        void destroy ();
 
         Memory copy ();
 
@@ -34,6 +34,8 @@ class Memory {
 
         size_t    g_data_size (uint64_t address);
         uint8_t * g_data      (uint64_t address);
+        void      s_data      (uint64_t address, const uint8_t * data, size_t size);
+        void      s_page      (uint64_t address, Page * page);
         
         uint8_t  g_byte  (uint64_t address);
         uint16_t g_word  (uint64_t address);

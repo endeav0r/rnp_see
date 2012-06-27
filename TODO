@@ -17,3 +17,9 @@ Translator :: *
 	Needs to extend the value of (eax + ecx) to 64-bits in the VM. The VM doesn't
 	know the semantics of its variables, so the Translator must tell the VM to
 	store the result in 64-bit register. operand_set() does this.
+
+Update the README
+
+Create a Makefile
+
+Catch malloc errors (new), especially in page.cc

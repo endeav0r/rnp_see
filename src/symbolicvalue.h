@@ -35,6 +35,7 @@ class SymbolicValue {
         const SymbolicValue operator |  (const SymbolicValue & rhs) const;
         const SymbolicValue operator ^  (const SymbolicValue & rhs) const;
         const SymbolicValue operator == (const SymbolicValue & rhs) const;
+        const SymbolicValue operator != (const SymbolicValue & rhs) const;
         const SymbolicValue operator >> (const SymbolicValue & rhs) const;
         const SymbolicValue operator << (const SymbolicValue & rhs) const;
         const SymbolicValue operator ~  () const;

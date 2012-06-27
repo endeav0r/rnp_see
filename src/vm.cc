@@ -96,6 +96,12 @@ VM :: VM (std::string filename)
 }
 
 
+VM :: ~VM ()
+{
+    memory.destroy();
+}
+
+
 void VM :: step ()
 {
     uint64_t ip_addr = variables[ip_id].g_uint64();
@@ -121,7 +127,7 @@ void VM :: step ()
 
     std::list <Instruction *> :: iterator it;
     for (it = instructions.begin(); it != instructions.end(); it++) {
-        std::cout << (*it)->str() << std::endl;
+        //std::cout << (*it)->str() << std::endl;
              EXECUTE(InstructionAdd)
         else EXECUTE(InstructionAnd)
         else EXECUTE(InstructionAssign)
@@ -285,7 +291,6 @@ void VM :: execute (InstructionShr * shr)
 
 void VM :: execute (InstructionSignExtend * sext)
 {
-    std::cerr << "sign extend dst.g_bits()=" << sext->g_dst().g_bits() << std::endl;
     // force src variable to be the src size
     SymbolicValue src = g_value(sext->g_src()).extend(sext->g_src().g_bits());
     // now sign extend this value to the dst's size

@@ -110,6 +110,7 @@ const SymbolicValue SymbolicValue :: operator OPER (const SymbolicValue & rhs) c
 }
 
 SVCMP(==, SymbolicValueEq)
+SVCMP(!=, SymbolicValueEq)
 
 const SymbolicValue SymbolicValue :: cmpLes (const SymbolicValue & rhs) const
 {

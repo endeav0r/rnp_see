@@ -27,6 +27,7 @@ class Page {
         // this does not affect the size of the page, and will throw an error
         // if size > this->size
         void s_data (const uint8_t * data, size_t size);
+        void s_data (size_t offset, const uint8_t * data, size_t size);
 
         size_t    g_size  ();
         uint8_t * g_data  (size_t offset);

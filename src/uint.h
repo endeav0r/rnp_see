@@ -42,6 +42,7 @@ class UInt {
         bool operator <= (const UInt &) const;
         bool operator >= (const UInt &) const;
         bool operator == (const UInt &) const;
+        bool operator != (const UInt &) const;
 };
 
 #endif
