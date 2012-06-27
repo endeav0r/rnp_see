@@ -21,6 +21,8 @@ class SymbolicValue {
         
         virtual const std::string str () const;
 
+        const SymbolicValue extend (int bits) const;
+        
         UInt     g_value  () const { return value;             }
         uint64_t g_uint64 () const { return value.g_value64(); }
         int      g_bits   () const { return value.g_bits();    }

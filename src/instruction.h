@@ -129,8 +129,9 @@ class InstructionLoad : public Instruction {
         InstructionLoad (uint64_t address, uint32_t size, int bits, InstructionOperand & dst, InstructionOperand & src)
             : Instruction(address, size), bits(bits), dst(dst), src(src) {}
         std::string str();
-        InstructionOperand g_dst () { return dst; }
-        InstructionOperand g_src () { return src; }
+        int                g_bits () { return bits; }
+        InstructionOperand g_dst ()  { return dst; }
+        InstructionOperand g_src ()  { return src; }
 };
 
 class InstructionStore : public Instruction {

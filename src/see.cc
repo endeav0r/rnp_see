@@ -41,6 +41,7 @@ int main (int argc, char * argv[])
         if (c == 'a') { while (true) vm.step(); }
         if (c == 'd') { for (int i = 0; i < 8; i++) vm.step(); }
         if (c == 'f') { for (int i = 0; i < 16; i++) vm.step(); }
+        if (c == 'g') { for (int i = 0; i < 128; i++) vm.step(); }
         if (c == 'r') vm.debug_x86_registers();
         if (c == 's') vm.step();
         if (c == 'v') vm.debug_variables();

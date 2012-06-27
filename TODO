@@ -9,3 +9,11 @@ Translator :: translate ()
     movqa instructions just calls movq.
 
 udis86 incorrectly detects movdqa instruction as movqa. submit bug report.
+
+Translator :: *
+	All instructions need to use operand_set (). operand_set() will insure the
+	lhs of the assignment is the full size of the destination register. IE
+	add eax, ecx;
+	Needs to extend the value of (eax + ecx) to 64-bits in the VM. The VM doesn't
+	know the semantics of its variables, so the Translator must tell the VM to
+	store the result in 64-bit register. operand_set() does this.

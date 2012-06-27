@@ -12,6 +12,8 @@ Page :: Page (size_t size)
     this->size = size;
     this->data = new uint8_t [size];
     this->parent = NULL;
+
+    memset(this->data, 0, size);
 }
 
 Page :: Page (size_t size, uint8_t * data)
@@ -65,6 +67,13 @@ void Page :: resize (size_t new_size)
     delete[] data;
     data = new_data;
     size = new_size;
+}
+
+void Page :: s_data (const uint8_t * data, size_t size)
+{
+    if (size > this->size)
+        throw std::runtime_error("memcpy beyond size of page");
+    memcpy(this->data, data, size);
 }
 
 size_t Page :: g_size () { return this->size; }

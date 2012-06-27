@@ -35,11 +35,15 @@ class Translator {
         void call      (ud_t * ud_obj, uint64_t address);
         void cdqe      (ud_t * ud_obj, uint64_t address);
         void cmp       (ud_t * ud_obj, uint64_t address);
+        void cmpxchg   (ud_t * ud_obj, uint64_t address);
         void hlt       (ud_t * ud_obj, uint64_t address);
         void ja        (ud_t * ud_obj, uint64_t address);
+        void jae       (ud_t * ud_obj, uint64_t address);
+        void jbe       (ud_t * ud_obj, uint64_t address);
         void jl        (ud_t * ud_obj, uint64_t address);
         void jle       (ud_t * ud_obj, uint64_t address);
         void jmp       (ud_t * ud_obj, uint64_t address);
+        void jns       (ud_t * ud_obj, uint64_t address);
         void jnz       (ud_t * ud_obj, uint64_t address);
         void js        (ud_t * ud_obj, uint64_t address);
         void jz        (ud_t * ud_obj, uint64_t address);
@@ -51,6 +55,7 @@ class Translator {
         void movq      (ud_t * ud_obj, uint64_t address);
         void movqa     (ud_t * ud_obj, uint64_t address);
         void movsxd    (ud_t * ud_obj, uint64_t address);
+        void movsx     (ud_t * ud_obj, uint64_t address);
         void movzx     (ud_t * ud_obj, uint64_t address);
         void mul       (ud_t * ud_obj, uint64_t address);
         void nop       (ud_t * ud_obj, uint64_t address);
@@ -62,12 +67,14 @@ class Translator {
         void punpcklbw (ud_t * ud_obj, uint64_t address);
         void push      (ud_t * ud_obj, uint64_t address);
         void pxor      (ud_t * ud_obj, uint64_t address);
+        void rep       (ud_t * ud_obj, uint64_t address);
         void ret       (ud_t * ud_obj, uint64_t address);
         void rol       (ud_t * ud_obj, uint64_t address);
         void sar       (ud_t * ud_obj, uint64_t address);
         void setz      (ud_t * ud_obj, uint64_t address);
         void shr       (ud_t * ud_obj, uint64_t address);
         void shl       (ud_t * ud_obj, uint64_t address);
+        void stosd     (ud_t * ud_obj, uint64_t address);
         void sub       (ud_t * ud_obj, uint64_t address);
         void syscall   (ud_t * ud_obj, uint64_t address);
         void test      (ud_t * ud_obj, uint64_t address);

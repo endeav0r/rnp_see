@@ -3,7 +3,7 @@
 require('lfs')
 
 CPP   = 'g++'
-FLAGS = '-Wall -Wno-switch -g -O2 --std=c++0x'
+FLAGS = '-Wall -Wno-switch -g -O0 --std=c++0x'
 COMPILE = CPP .. ' ' .. FLAGS .. ' -c '
 
 function execute_try (command)

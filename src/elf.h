@@ -15,7 +15,7 @@ const uint64_t ELF64_DEP_ADDR   = 0x7f00000000000000ULL;
 const uint64_t ELF64_DEP_ADD    = 0x0010000000000000ULL;
 
 const uint64_t ELF64_TLS_ADDR   = 0x7ffe000000000000ULL;
-const uint64_t ELF64_TLS_SIZE   = 0x4000ULL;
+const uint64_t ELF64_TLS_SIZE   = 0x1000ULL;
 
 const uint64_t ELF64_STACK_ADDR = 0x7fff000000000000ULL;
 const uint64_t ELF64_STACK_SIZE = 0x4000ULL;
@@ -101,10 +101,10 @@ class Elf64Relocation {
 class Elf64 : public Elf {
     private :
         std::list <Elf64 *> dependencies;
-        const Elf64_Ehdr * ehdr;
-        const std::string  filename;
-        const uint64_t     offset; // virtual address offset
-        bool               dependency;
+        const Elf64_Ehdr *  ehdr;
+        const std::string   filename;
+        const uint64_t      offset; // virtual address offset
+        bool                dependency;
 
         std::list <Elf64Symbol> global_symbols;
 
@@ -122,8 +122,18 @@ class Elf64 : public Elf {
         std::list <Elf64Symbol> find_symbols_deps (const std::string name);
         const Elf64Symbol       find_symbol_glob  (const std::string name, Elf64 & elf);
 
+        // finds DT_NEEDED entries and loads creates Elf64 instances of them
+        // for the dependencies list
         void load_dependencies ();
+
+        // does this elf's relocations for the passed memory. The passed Elf64
+        // should be the "initial" Elf64 in which all the dependencies are
+        // stored
         void patch_relocations (Memory & memory, Elf64 & elf);
+
+        // finds the first .tdata section and copies it into the given page.
+        // Returns true if found and copied, false otherwise
+        bool set_tls_memory    (Page * page);
     public :
         Elf64  (const std::string filename);
         Elf64  (const std::string filename, uint64_t offset);

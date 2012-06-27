@@ -457,6 +457,40 @@ void Elf64 :: patch_relocations (Memory & memory, Elf64 & elf)
 }
 
 
+bool Elf64 :: set_tls_memory (Page * page)
+{
+    bool found = false;
+    const Elf64_Shdr * shdr;
+
+    // find .tdata
+    for (int si = 0; si < ehdr->e_shnum; si++) {
+        shdr = g_shdr(si);
+        if (g_strtab_str(ehdr->e_shstrndx, shdr->sh_name) == ".tdata") {
+            found = true;
+            break;
+        }
+    }
+
+    if (not found) return found;
+
+    // copy over data
+    const uint8_t * tls_data = &(data[shdr->sh_offset]);
+    page->s_data(tls_data, shdr->sh_size);
+    
+    // perform TLS specific relocations
+    std::list <Elf64Relocation> relocations = g_relocations();
+    std::list <Elf64Relocation> :: iterator it;
+
+    for (it = relocations.begin(); it != relocations.end(); it++) {
+        if (it->g_type() == R_X86_64_TPOFF64) {
+            page->s_qword(it->g_addend(), offset + page->g_qword(it->g_addend()));
+        }
+    }
+
+    return true;
+}
+
+
 Elf64 :: Elf64 (const std::string filename)
     : filename(filename), offset(0), dependency(false)
 {
@@ -557,20 +591,38 @@ std::map <uint64_t, Page *> Elf64 :: g_pages ()
 
 Memory Elf64 :: g_memory ()
 {
+    std::list <Elf64 *> :: iterator dit;
+
     Memory memory(g_pages());
 
+    // relocate before copying over TLS so we copy over all the TLS relocation
+    // goodness
     #ifdef DEBUG
     std::cerr << "patching relocations for: " << filename << std::endl;
     #endif
     patch_relocations(memory, *this);
-
-    std::list <Elf64 *> :: iterator dit;
 
     for (dit = dependencies.begin(); dit != dependencies.end(); dit++) {
         #ifdef DEBUG
         std::cerr << "patching relocations for: " << (*dit)->g_filename() << std::endl;
         #endif
         (*dit)->patch_relocations(memory, *this);
+    }
+
+    if (set_tls_memory(memory.g_page(ELF64_TLS_ADDR))) {
+        #ifdef DEBUG
+        std::cerr << ".tdata section found in: " << filename << std::endl;
+        #endif
+    }
+    else {
+        for (dit = dependencies.begin(); dit != dependencies.end(); dit++) {
+            if ((*dit)->set_tls_memory(memory.g_page(ELF64_TLS_ADDR))) {
+                #ifdef DEBUG
+                std::cerr << ".tdata section found in" << filename << std::endl;
+                #endif
+                break;
+            }
+        }
     }
 
     return memory;
@@ -601,6 +653,8 @@ std::map <uint64_t, SymbolicValue> Elf64 :: g_variables ()
     variables[InstructionOperand::str_to_id("UD_R_XMM2")] = SymbolicValue(128, 0);
     variables[InstructionOperand::str_to_id("UD_R_XMM3")] = SymbolicValue(128, 0);
 
+    variables[InstructionOperand::str_to_id("UD_R_DF")] = SymbolicValue(1, 0);
+    
     variables[InstructionOperand::str_to_id("UD_R_FS")]  = SymbolicValue(64, ELF64_FS_INIT);
     variables[InstructionOperand::str_to_id("UD_R_RSP")] = SymbolicValue(64, ELF64_RSP_INIT);
     variables[InstructionOperand::str_to_id("UD_R_RIP")] = SymbolicValue(64, g_entry());

@@ -42,6 +42,10 @@ const std::string SymbolicValueNot :: str () const
     return std::string("~(") + src.str() + ")";
 }
 
+const SymbolicValue SymbolicValue :: extend (int bits) const {
+    return SymbolicValue(value.extend(bits));
+}
+
 #define SVSTR(OPER, CLASS) \
 const std::string CLASS :: str () const \
 {                                 \

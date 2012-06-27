@@ -30,6 +30,8 @@ class Memory {
 
         Memory copy ();
 
+        Page *    g_page (uint64_t address) { return pages[address]; }
+
         size_t    g_data_size (uint64_t address);
         uint8_t * g_data      (uint64_t address);
         

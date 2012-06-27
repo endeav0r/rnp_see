@@ -151,22 +151,21 @@ void VM :: step ()
 
 void VM :: execute (InstructionAdd * add)
 {
-    variables[add->g_dst().g_id()] = g_value(add->g_lhs()) + g_value(add->g_rhs());
+    variables[add->g_dst().g_id()] = (g_value(add->g_lhs())
+                                      + g_value(add->g_rhs())).extend(add->g_dst().g_bits());
 }
 
 
 void VM :: execute (InstructionAnd * And)
 {
-    variables[And->g_dst().g_id()] = g_value(And->g_lhs()) & g_value(And->g_rhs());
+    variables[And->g_dst().g_id()] = (g_value(And->g_lhs())
+                                      & g_value(And->g_rhs())).extend(And->g_dst().g_bits());
 }
 
 
 void VM :: execute (InstructionAssign * assign)
 {
-    InstructionOperand dst  = assign->g_dst();
-    SymbolicValue src = g_value(assign->g_src());
-    const SymbolicValue src2 = SymbolicValue(src.g_value().extend(dst.g_bits()));
-    variables[dst.g_id()] = src2;
+    variables[assign->g_dst().g_id()] = g_value(assign->g_src()).extend(assign->g_dst().g_bits());
 }
 
 
@@ -176,39 +175,43 @@ void VM :: execute (InstructionBrc * brc)
     if (condition.g_wild())
         throw std::runtime_error("symbolic brc not yet supported");
     else if (condition.g_uint64()) {
-        variables[ip_id] = g_value(brc->g_dst());
+        variables[ip_id] = g_value(brc->g_dst()).extend(variables[ip_id].g_bits());
     }
 }
 
 
 void VM :: execute (InstructionCmpEq * cmpeq)
 {
-    variables[cmpeq->g_dst().g_id()] =    g_value(cmpeq->g_lhs())
-                                       == g_value(cmpeq->g_rhs());
+    SymbolicValue cmp = g_value(cmpeq->g_lhs()) == g_value(cmpeq->g_rhs());
+    variables[cmpeq->g_dst().g_id()] = cmp.extend(cmpeq->g_dst().g_bits());
 }
 
 
 void VM :: execute (InstructionCmpLes * cmples)
 {
-    variables[cmples->g_dst().g_id()] = g_value(cmples->g_lhs()).cmpLes(g_value(cmples->g_rhs()));
+    SymbolicValue cmp = g_value(cmples->g_lhs()).cmpLes(g_value(cmples->g_rhs()));
+    variables[cmples->g_dst().g_id()] = cmp.extend(cmples->g_dst().g_bits());
 }
 
 
 void VM :: execute (InstructionCmpLeu * cmpleu)
 {
-    variables[cmpleu->g_dst().g_id()] = g_value(cmpleu->g_lhs()).cmpLeu(g_value(cmpleu->g_rhs()));
+    SymbolicValue cmp = g_value(cmpleu->g_lhs()).cmpLeu(g_value(cmpleu->g_rhs()));
+    variables[cmpleu->g_dst().g_id()] = cmp.extend(cmpleu->g_dst().g_bits());
 }
 
 
 void VM :: execute (InstructionCmpLts * cmplts)
 {
-    variables[cmplts->g_dst().g_id()] = g_value(cmplts->g_lhs()).cmpLts(g_value(cmplts->g_rhs()));
+    SymbolicValue cmp = g_value(cmplts->g_lhs()).cmpLts(g_value(cmplts->g_rhs()));
+    variables[cmplts->g_dst().g_id()] = cmp.extend(cmplts->g_dst().g_bits());
 }
 
 
 void VM :: execute (InstructionCmpLtu * cmpltu)
 {
-    variables[cmpltu->g_dst().g_id()] = g_value(cmpltu->g_lhs()).cmpLtu(g_value(cmpltu->g_rhs()));
+    SymbolicValue cmp = g_value(cmpltu->g_lhs()).cmpLtu(g_value(cmpltu->g_rhs()));
+    variables[cmpltu->g_dst().g_id()] = cmp.extend(cmpltu->g_dst().g_bits());
 }
 
 
@@ -217,22 +220,26 @@ void VM :: execute (InstructionLoad * load)
     InstructionOperand dst = load->g_dst();
     const SymbolicValue src = g_value(load->g_src());
 
-    switch (src.g_bits()) {
+    #ifdef DEBUG
+    std::cout << "loadloc " << std::hex << src.g_uint64() << std::endl;
+    #endif
+
+    switch (load->g_bits()) {
     case 8 :
         variables[dst.g_id()] = SymbolicValue(dst.g_bits(),
-                                              memory.g_byte(src.g_uint64()));
+                                              memory.g_byte(src.g_uint64())).extend(dst.g_bits());
         break;
     case 16 :
         variables[dst.g_id()] = SymbolicValue(dst.g_bits(),
-                                              memory.g_word(src.g_uint64()));
+                                              memory.g_word(src.g_uint64())).extend(dst.g_bits());
         break;
     case 32 :
         variables[dst.g_id()] = SymbolicValue(dst.g_bits(),
-                                              memory.g_dword(src.g_uint64()));
+                                              memory.g_dword(src.g_uint64())).extend(dst.g_bits());
         break;
     case 64 :
         variables[dst.g_id()] = SymbolicValue(dst.g_bits(),
-                                              memory.g_qword(src.g_uint64()));
+                                              memory.g_qword(src.g_uint64())).extend(dst.g_bits());
         break;
     default :
         std::stringstream ss;
@@ -244,31 +251,35 @@ void VM :: execute (InstructionLoad * load)
 
 void VM :: execute (InstructionNot * Not)
 {
-    variables[Not->g_dst().g_id()] = ~ g_value(Not->g_src());
+    variables[Not->g_dst().g_id()] = (~ g_value(Not->g_src())).extend(Not->g_dst().g_bits());
 }
 
 
 void VM :: execute (InstructionMul * mul)
 {
-    variables[mul->g_dst().g_id()] = g_value(mul->g_lhs()) * g_value(mul->g_rhs());
+    variables[mul->g_dst().g_id()] = (g_value(mul->g_lhs()) 
+                                      * g_value(mul->g_rhs())).extend(mul->g_dst().g_bits());
 }
 
 
 void VM :: execute (InstructionOr * Or)
 {
-    variables[Or->g_dst().g_id()] = g_value(Or->g_lhs()) | g_value(Or->g_rhs());
+    variables[Or->g_dst().g_id()] = (g_value(Or->g_lhs()) 
+                                     | g_value(Or->g_rhs())).extend(Or->g_dst().g_bits());
 }
 
 
 void VM :: execute (InstructionShl * shl)
 {
-    variables[shl->g_dst().g_id()] = g_value(shl->g_lhs()) << g_value(shl->g_rhs());
+    variables[shl->g_dst().g_id()] = (g_value(shl->g_lhs())
+                                      << g_value(shl->g_rhs())).extend(shl->g_dst().g_bits());
 }
 
 
 void VM :: execute (InstructionShr * shr)
 {
-    variables[shr->g_dst().g_id()] = g_value(shr->g_lhs()) >> g_value(shr->g_rhs());
+    variables[shr->g_dst().g_id()] = (g_value(shr->g_lhs())
+                                      >> g_value(shr->g_rhs())).extend(shr->g_dst().g_bits());
 }
 
 
@@ -282,6 +293,10 @@ void VM :: execute (InstructionStore * store)
 {
     const SymbolicValue dst = g_value(store->g_dst());
     const SymbolicValue src = g_value(store->g_src());
+
+    #ifdef DEBUG
+    std::cout << "storeloc: " << std::hex << dst.g_uint64() << std::endl;
+    #endif
 
     switch (store->g_bits()) {
     case 8  : memory.s_byte(dst.g_uint64(), src.g_uint64()); break;
@@ -298,7 +313,8 @@ void VM :: execute (InstructionStore * store)
 
 void VM :: execute (InstructionSub * sub)
 {
-    variables[sub->g_dst().g_id()] = g_value(sub->g_lhs()) - g_value(sub->g_rhs());
+    variables[sub->g_dst().g_id()] = (g_value(sub->g_lhs())
+                                      - g_value(sub->g_rhs())).extend(sub->g_dst().g_bits());
 }
 
 
@@ -310,7 +326,8 @@ void VM :: execute (InstructionSyscall * syscall)
 
 void VM :: execute (InstructionXor * Xor)
 {
-    variables[Xor->g_dst().g_id()] = g_value(Xor->g_lhs()) ^ g_value(Xor->g_rhs());
+    variables[Xor->g_dst().g_id()] = (g_value(Xor->g_lhs())
+                                      ^ g_value(Xor->g_rhs())).extend(Xor->g_dst().g_bits());
 }
 
 void VM :: execute (Instruction * ins) {}

@@ -16,16 +16,19 @@ class Page {
         Page (size_t size);
         Page (size_t size, uint8_t * data);
         
-        Page * destroy ();
-
+        Page * destroy    ();
         Page * make_child ();
         
         void set_parent (Page * parent);
         
         void resize (size_t new_size);
 
-        size_t   g_size  ();
+        // copies data into this page
+        // this does not affect the size of the page, and will throw an error
+        // if size > this->size
+        void s_data (const uint8_t * data, size_t size);
 
+        size_t    g_size  ();
         uint8_t * g_data  (size_t offset);
         
         uint8_t   g_byte  (size_t offset);
