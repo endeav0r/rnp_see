@@ -435,22 +435,6 @@ InstructionOperand Translator :: operand (ud_t * ud_obj, int operand_i, uint64_t
 }
 
 
-void Translator :: jcc (ud_t * ud_obj, uint64_t address, InstructionOperand cond)
-{
-    size_t size = ud_insn_len(ud_obj);
-    InstructionOperand dst = operand_get(ud_obj, 0, address);
-
-    if (ud_obj->operand[0].type == UD_OP_JIMM) {
-        InstructionOperand rip(OPTYPE_VAR, 64, "UD_R_RIP");
-        InstructionOperand tmp(OPTYPE_VAR, 64);
-        instructions.push_back(new InstructionSignExtend(address, size, tmp, dst));
-        instructions.push_back(new InstructionAdd(address, size, tmp, rip, tmp));
-        instructions.push_back(new InstructionBrc(address, size, cond, tmp));
-    }
-    else instructions.push_back(new InstructionBrc(address, size, cond, dst));
-}
-
-
 void Translator :: cmovcc (ud_t * ud_obj, uint64_t address, InstructionOperand cond)
 {
 
@@ -467,6 +451,22 @@ void Translator :: cmovcc (ud_t * ud_obj, uint64_t address, InstructionOperand c
     instructions.push_back(new InstructionOr(address, size, dst, dst, tmp));
 
     operand_set(ud_obj, 0, address, dst);
+}
+
+
+void Translator :: jcc (ud_t * ud_obj, uint64_t address, InstructionOperand cond)
+{
+    size_t size = ud_insn_len(ud_obj);
+    InstructionOperand dst = operand_get(ud_obj, 0, address);
+
+    if (ud_obj->operand[0].type == UD_OP_JIMM) {
+        InstructionOperand rip(OPTYPE_VAR, 64, "UD_R_RIP");
+        InstructionOperand tmp(OPTYPE_VAR, 64);
+        instructions.push_back(new InstructionSignExtend(address, size, tmp, dst));
+        instructions.push_back(new InstructionAdd(address, size, tmp, rip, tmp));
+        instructions.push_back(new InstructionBrc(address, size, cond, tmp));
+    }
+    else instructions.push_back(new InstructionBrc(address, size, cond, dst));
 }
 
 
@@ -637,7 +637,7 @@ void Translator :: cmova (ud_t * ud_obj, uint64_t address)
     InstructionOperand CFandZF    (OPTYPE_VAR, 1);
     InstructionOperand notCFandZF (OPTYPE_VAR, 1);
 
-    instructions.push_back(new InstructionOr(address, size, CFandZF, CF, ZF));
+    instructions.push_back(new InstructionAnd(address, size, CFandZF, CF, ZF));
     instructions.push_back(new InstructionNot(address, size, notCFandZF, CFandZF));
 
     cmovcc(ud_obj, address, notCFandZF);
