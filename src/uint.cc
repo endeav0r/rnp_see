@@ -64,7 +64,7 @@ UInt UInt :: extend (int bits) const
 
 std::string UInt :: str () const
 {
-    uint64_t hi = g_value128() >> 64;
+    uint64_t hi = (g_value128() >> 64);
     uint64_t lo = g_value128();
     std::stringstream ss;
     ss << "0x" << std::hex << hi << std::hex << lo;
@@ -74,7 +74,9 @@ std::string UInt :: str () const
 #define UINTOPERATOR(OPER) \
 UInt UInt :: operator OPER (const UInt & rhs) const \
 { \
-    return UInt(this->bits, this->g_value128() OPER rhs.g_value128()); \
+    UInt result(this->bits); \
+    result.value = this->g_value128() OPER rhs.g_value128(); \
+    return result; \
 }
 
 UINTOPERATOR(+)

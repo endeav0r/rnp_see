@@ -28,8 +28,8 @@ class Translator {
         InstructionOperand operand_get  (ud_t * ud_obj, int operand_i, uint64_t address);
         InstructionOperand operand      (ud_t * ud_obj, int operand_i, uint64_t address);
 
-        void jcc       (ud_t * ud_obj, uint64_t address, InstructionOperand cond);
         void cmovcc    (ud_t * ud_obj, uint64_t address, InstructionOperand cond);
+        void jcc       (ud_t * ud_obj, uint64_t address, InstructionOperand cond);
         
         void adc       (ud_t * ud_obj, uint64_t address);
         void add       (ud_t * ud_obj, uint64_t address);

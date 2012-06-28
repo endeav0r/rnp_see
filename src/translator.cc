@@ -281,6 +281,7 @@ InstructionOperand Translator :: operand_load (ud_t * ud_obj,    int operand_i,
     InstructionOperand addr = operand(ud_obj, operand_i, address);
     InstructionOperand loadResult (OPTYPE_VAR, bits);
     if (bits == 128) {
+        // load least-significant 64-bits
         instructions.push_back(new InstructionLoad(address, size, 64, loadResult, addr));
         // load most-significant 64-bits
         InstructionOperand tmp     (OPTYPE_VAR, 128);
@@ -489,12 +490,14 @@ void Translator :: adc (ud_t * ud_obj, uint64_t address)
     instructions.push_back(new InstructionAdd(address, size, tmp, lhs, rhs));
     instructions.push_back(new InstructionAdd(address, size, tmp, tmp, CF));
     
-    instructions.push_back(new InstructionXor(address, size, OFTmp, tmp,   lhs));
-    instructions.push_back(new InstructionShr(address, size, OF,    OFTmp, OFTmpShl));
-    
     instructions.push_back(new InstructionCmpLtu(address, size, CF, tmp, lhs));
     instructions.push_back(new InstructionCmpEq (address, size, ZF, tmp, zero));
     instructions.push_back(new InstructionCmpLts(address, size, SF, tmp, zero));
+    // OF is calculated based on the RREIL paper
+    // http://www2.in.tum.de/bib/files/sepp11precise.pdf
+    InstructionOperand SFxorOF(OPTYPE_VAR, 1);
+    instructions.push_back(new InstructionCmpLts(address, size, SFxorOF, lhs, rhs));
+    instructions.push_back(new InstructionXor(address, size, OF, SFxorOF, SF));
     
     operand_set(ud_obj, 0, address, tmp);
 }
@@ -502,12 +505,12 @@ void Translator :: adc (ud_t * ud_obj, uint64_t address)
 
 void Translator :: add (ud_t * ud_obj, uint64_t address)
 {
+    size_t size = ud_insn_len(ud_obj);
+
     InstructionOperand lhs = operand_get(ud_obj, 0, address);
     InstructionOperand rhs = operand_get(ud_obj, 1, address);
     InstructionOperand tmp (OPTYPE_VAR, lhs.g_bits());
         
-    InstructionOperand OFTmp    (OPTYPE_VAR, lhs.g_bits());
-    InstructionOperand OFTmpShl (OPTYPE_CONSTANT, lhs.g_bits(), lhs.g_bits() - 1);
     InstructionOperand OF       (OPTYPE_VAR, 1, "OF"); // signed overflow
     InstructionOperand CF       (OPTYPE_VAR, 1, "CF"); // unsigned overflow
     InstructionOperand ZF       (OPTYPE_VAR, 1, "ZF");
@@ -516,12 +519,14 @@ void Translator :: add (ud_t * ud_obj, uint64_t address)
     
     instructions.push_back(new InstructionAdd(address, ud_insn_len(ud_obj), tmp, lhs, rhs));
     
-    instructions.push_back(new InstructionXor(address, ud_insn_len(ud_obj), OFTmp, tmp,   lhs));
-    instructions.push_back(new InstructionShr(address, ud_insn_len(ud_obj), OF,    OFTmp, OFTmpShl));
-    
-    instructions.push_back(new InstructionCmpLtu(address, ud_insn_len(ud_obj), CF, tmp, lhs));
-    instructions.push_back(new InstructionCmpEq (address, ud_insn_len(ud_obj), ZF, tmp, zero));
-    instructions.push_back(new InstructionCmpLts(address, ud_insn_len(ud_obj), SF, tmp, zero));
+    instructions.push_back(new InstructionCmpLtu(address, size, CF, tmp, lhs));
+    instructions.push_back(new InstructionCmpEq (address, size, ZF, tmp, zero));
+    instructions.push_back(new InstructionCmpLts(address, size, SF, tmp, zero));
+    // OF is calculated based on the RREIL paper
+    // http://www2.in.tum.de/bib/files/sepp11precise.pdf
+    InstructionOperand SFxorOF(OPTYPE_VAR, 1);
+    instructions.push_back(new InstructionCmpLts(address, size, SFxorOF, lhs, rhs));
+    instructions.push_back(new InstructionXor(address, size, OF, SFxorOF, SF));
     
     operand_set(ud_obj, 0, address, tmp);
 }
@@ -1117,8 +1122,10 @@ void Translator :: movq (ud_t * ud_obj, uint64_t address)
 
     if (ud_obj->operand[0].type == UD_OP_MEM)
         instructions.push_back(new InstructionStore(address, size, 64, dst, src));
-    else if (ud_obj->operand[1].type == UD_OP_MEM)
-        instructions.push_back(new InstructionLoad(address, size, 64, dst, src));
+    else if (ud_obj->operand[1].type == UD_OP_MEM) {
+        src = operand_load(ud_obj, 1, address, 128);
+        instructions.push_back(new InstructionAssign(address, size, dst, src));
+    }
     else
         instructions.push_back(new InstructionAssign(address, size, dst, src));
 }
@@ -1350,8 +1357,10 @@ void Translator :: pmovmskb (ud_t * ud_obj, uint64_t address)
     InstructionOperand tmp (OPTYPE_VAR, src.g_bits());
     for (int i = 0; i < src.g_bits() / 8; i++) {
         InstructionOperand isolateShift(OPTYPE_CONSTANT, 8, 7 + (i * 8));
+        InstructionOperand one (OPTYPE_CONSTANT, src.g_bits(), 1);
         // isolate proper bit
         instructions.push_back(new InstructionShr(address, size, tmp, src, isolateShift));
+        instructions.push_back(new InstructionAnd(address, size, tmp, tmp, one));
         // move bit to final location
         InstructionOperand finalShift(OPTYPE_CONSTANT, 8, i);
         instructions.push_back(new InstructionShl(address, size, tmp, tmp, finalShift));

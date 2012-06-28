@@ -116,15 +116,16 @@ uint64_t Memory :: g_qword (uint64_t address)
     try {
         uint64_t page_address = g_page_address(address, 8);
         return this->pages[page_address]->g_qword(address - page_address);
-    } catch (std::exception & e) {
-        // attempt to build uint64_t one byte at a time in case
-        // it is split across multiple pages
-        uint64_t result = 0;
-        for (int i = 0; i < 8; i++) {
-            result |= g_byte(address + i) << (56 - (i * 8));
-        }
-        return result;
+    } catch (std::exception & e) {}
+
+    std::cerr << "building uint64_t" << std::endl;
+    // attempt to build uint64_t one byte at a time in case
+    // it is split across multiple pages
+    uint64_t result = 0;
+    for (int i = 0; i < 8; i++) {
+        result |= ((uint64_t) g_byte(address + i)) << (i * 8);
     }
+    return result;
 }
 
 
