@@ -105,3 +105,13 @@ UINTCMPOPERATOR(<=)
 UINTCMPOPERATOR(>=)
 UINTCMPOPERATOR(==)
 UINTCMPOPERATOR(!=)
+
+bool UInt :: cmpLts (const UInt & rhs) const
+{
+    return (g_svalue128() < rhs.g_svalue128());
+}
+
+bool UInt :: cmpLes (const UInt & rhs) const
+{
+    return (g_svalue128() <= rhs.g_svalue128());
+}

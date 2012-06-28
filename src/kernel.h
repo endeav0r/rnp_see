@@ -22,6 +22,8 @@ class Kernel {
 
         void syscall (std::map <uint64_t, SymbolicValue> & variables, Memory & memory);
 
+        SYS_FUNC(exit)
+        SYS_FUNC(exit_group)
         SYS_FUNC(fstat)
         SYS_FUNC(getpid)
         SYS_FUNC(mmap)

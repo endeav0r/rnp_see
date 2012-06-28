@@ -119,10 +119,7 @@ SVCMP(!=, SymbolicValueEq)
 const SymbolicValue SymbolicValue :: cmpLes (const SymbolicValue & rhs) const
 {
     if ((not this->wild) && (not rhs.wild)) {
-        int bits = value.g_bits() > rhs.value.g_bits() 
-                   ? value.g_bits() 
-                   : rhs.value.g_bits();
-        if (value.sign_extend(bits) <= rhs.value.sign_extend(bits))
+        if (value.cmpLes(rhs.g_value()))
             return SymbolicValue(1, 1);
         else
             return SymbolicValue(1, 0);
@@ -146,10 +143,7 @@ const SymbolicValue SymbolicValue :: cmpLeu (const SymbolicValue & rhs) const
 const SymbolicValue SymbolicValue :: cmpLts (const SymbolicValue & rhs) const
 {
     if ((not this->wild) && (not rhs.wild)) {
-        int bits = value.g_bits() > rhs.value.g_bits() 
-                   ? value.g_bits() 
-                   : rhs.value.g_bits();
-        if (value.sign_extend(bits) < rhs.value.sign_extend(bits))
+        if (value.cmpLts(rhs.g_value()))
             return SymbolicValue(1, 1);
         else
             return SymbolicValue(1, 0);

@@ -43,6 +43,9 @@ class UInt {
         bool operator >= (const UInt &) const;
         bool operator == (const UInt &) const;
         bool operator != (const UInt &) const;
+
+        bool cmpLts (const UInt &) const;
+        bool cmpLes (const UInt &) const;
 };
 
 #endif

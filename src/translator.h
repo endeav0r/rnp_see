@@ -45,6 +45,7 @@ class Translator {
         void dec       (ud_t * ud_obj, uint64_t address);
         void div       (ud_t * ud_obj, uint64_t address);
         void hlt       (ud_t * ud_obj, uint64_t address);
+        void imul      (ud_t * ud_obj, uint64_t address);
         void ja        (ud_t * ud_obj, uint64_t address);
         void jae       (ud_t * ud_obj, uint64_t address);
         void jb        (ud_t * ud_obj, uint64_t address);
@@ -82,16 +83,19 @@ class Translator {
         void push      (ud_t * ud_obj, uint64_t address);
         void pxor      (ud_t * ud_obj, uint64_t address);
         void rep       (ud_t * ud_obj, uint64_t address);
+        void repe      (ud_t * ud_obj, uint64_t address);
         void ret       (ud_t * ud_obj, uint64_t address);
         void rol       (ud_t * ud_obj, uint64_t address);
         void sar       (ud_t * ud_obj, uint64_t address);
         void sbb       (ud_t * ud_obj, uint64_t address);
         void seta      (ud_t * ud_obj, uint64_t address);
+        void setg      (ud_t * ud_obj, uint64_t address);
         void setnz     (ud_t * ud_obj, uint64_t address);
         void setz      (ud_t * ud_obj, uint64_t address);
         void shl       (ud_t * ud_obj, uint64_t address);
         void shld      (ud_t * ud_obj, uint64_t address);
         void shr       (ud_t * ud_obj, uint64_t address);
+        void std       (ud_t * ud_obj, uint64_t address);
         void stosd     (ud_t * ud_obj, uint64_t address);
         void sub       (ud_t * ud_obj, uint64_t address);
         void syscall   (ud_t * ud_obj, uint64_t address);

@@ -28,11 +28,35 @@ void Kernel :: syscall (std::map <uint64_t, SymbolicValue> & variables, Memory &
         case 0x5  : sys_fstat (variables, memory); break;
         case 0x9  : sys_mmap  (variables, memory); break;
         case 0x27 : sys_getpid(variables, memory); break;
+        case 0x3c : sys_exit  (variables, memory); break;
+        case 0xe7 : sys_exit_group(variables, memory); break;
         default :
             std::stringstream ss;
             ss << "unhandled syscall: " << rax.str();
             throw std::runtime_error(ss.str());
     }
+}
+
+
+void Kernel :: sys_exit (std::map <uint64_t, SymbolicValue> & variables, Memory & memory)
+{
+    SymbolicValue rdi = variables[InstructionOperand::str_to_id("UD_R_RDI")];
+
+    #ifdef DEBUG
+    std::cerr << "SYS_EXIT rdi=" << rdi.str()
+              << std::endl;
+    #endif    
+}
+
+
+void Kernel :: sys_exit_group (std::map <uint64_t, SymbolicValue> & variables, Memory & memory)
+{
+    SymbolicValue rdi = variables[InstructionOperand::str_to_id("UD_R_RDI")];
+
+    #ifdef DEBUG
+    std::cerr << "SYS_EXIT_GROUP rdi=" << rdi.str()
+              << std::endl;
+    #endif    
 }
 
 
@@ -49,9 +73,16 @@ void Kernel :: sys_fstat (std::map <uint64_t, SymbolicValue> & variables, Memory
 
     int result = fstat(rdi.g_uint64(), &buf);
 
-    memory.s_data(rsi.g_uint64(), (const uint8_t *) &buf, sizeof(struct stat));
+    //memory.s_data(rsi.g_uint64(), (const uint8_t *) &buf, sizeof(struct stat));
 
     variables[InstructionOperand::str_to_id("UD_R_RAX")] = SymbolicValue(64, result);
+
+    #ifdef DEBUG
+    std::cerr << "SYS_FSTAT rdi=" << rdi.str() << ", "
+              << "rsi=" << rsi.str() << ", "
+              << "result_rax=" << variables[InstructionOperand::str_to_id("UD_R_RAX")].str()
+              << std::endl;
+    #endif
 }
 
 
@@ -60,6 +91,12 @@ void Kernel :: sys_getpid (std::map <uint64_t, SymbolicValue> & variables, Memor
     //SymbolicValueCmpLtu pid(SymbolicValue(64), SymbolicValue(64, 1 << 16));
     SymbolicValue pid(64, 5000);
     variables[InstructionOperand::str_to_id("UD_R_RAX")] = pid;
+
+    #ifdef DEBUG
+    std::cerr << "SYS_GETPID "
+              << "result_rax=" << variables[InstructionOperand::str_to_id("UD_R_RAX")].str()
+              << std::endl;
+    #endif
 }
 
 
@@ -95,6 +132,17 @@ void Kernel :: sys_mmap (std::map <uint64_t, SymbolicValue> & variables, Memory 
     // insert this page at the next available mmap address and set result to its address
     memory.s_page(next_mmap, page);
     variables[InstructionOperand::str_to_id("UD_R_RAX")] = SymbolicValue(64, next_mmap);
+
+    #ifdef DEBUG
+    std::cerr << "SYS_MMAP rdi=" << rdi.str() << ", "
+              << "rsi=" << rsi.str() << ", "
+              << "rdx=" << rdx.str() << ", "
+              << "r10=" << r10.str() << ", "
+              << "r8="  << r8.str() << ", "
+              << "r9="  << r9.str() << ", "
+              << "result_rax=" << variables[InstructionOperand::str_to_id("UD_R_RAX")].str()
+              << std::endl;
+    #endif
 
     // increase next_mmap
     next_mmap += (mmap_size + 4095) % 4096;

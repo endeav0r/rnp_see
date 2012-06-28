@@ -238,10 +238,6 @@ void VM :: execute (InstructionLoad * load)
     InstructionOperand dst = load->g_dst();
     const SymbolicValue src = g_value(load->g_src());
 
-    #ifdef DEBUG
-    std::cout << "loadloc " << std::hex << src.g_uint64() << std::endl;
-    #endif
-
     switch (load->g_bits()) {
     case 8 :
         variables[dst.g_id()] = SymbolicValue(dst.g_bits(),
@@ -264,6 +260,11 @@ void VM :: execute (InstructionLoad * load)
         ss << "Tried to load invalid bit size: " << src.g_bits();
         throw std::runtime_error(ss.str());
     }
+
+    #ifdef DEBUG
+    std::cout << "loadloc [" << std::hex << src.g_uint64() << "] = "
+              << variables[dst.g_id()].str() << std::endl;
+    #endif
 }
 
 
@@ -324,7 +325,8 @@ void VM :: execute (InstructionStore * store)
     const SymbolicValue src = g_value(store->g_src());
 
     #ifdef DEBUG
-    std::cout << "storeloc: " << std::hex << dst.g_uint64() << std::endl;
+    std::cout << "storeloc: " << std::hex << dst.str() << " = "
+              << src.str() << std::endl;
     #endif
 
     switch (store->g_bits()) {
