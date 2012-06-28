@@ -673,7 +673,7 @@ std::map <uint64_t, SymbolicValue> Elf64 :: g_variables ()
     variables[InstructionOperand::str_to_id("UD_R_XMM2")] = SymbolicValue(128, 0);
     variables[InstructionOperand::str_to_id("UD_R_XMM3")] = SymbolicValue(128, 0);
 
-    variables[InstructionOperand::str_to_id("UD_R_DF")] = SymbolicValue(1, 0);
+    variables[InstructionOperand::str_to_id("DF")] = SymbolicValue(1, 0);
     
     variables[InstructionOperand::str_to_id("UD_R_FS")]  = SymbolicValue(64, ELF64_FS_INIT);
     variables[InstructionOperand::str_to_id("UD_R_RSP")] = SymbolicValue(64, ELF64_RSP_INIT);

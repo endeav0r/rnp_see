@@ -6,7 +6,7 @@
 
 #include "kernel.h"
 
-#define DEBUG
+//#define DEBUG
 
 void VM :: debug_x86_registers ()
 {
@@ -130,7 +130,7 @@ void VM :: step ()
 
     std::list <Instruction *> :: iterator it;
     for (it = instructions.begin(); it != instructions.end(); it++) {
-        std::cout << (*it)->str() << std::endl;
+        //std::cout << (*it)->str() << std::endl;
              EXECUTE(InstructionAdd)
         else EXECUTE(InstructionAnd)
         else EXECUTE(InstructionAssign)

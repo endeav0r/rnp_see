@@ -2,6 +2,7 @@
 
 #include <inttypes.h>
 
+#include <iomanip>
 #include <sstream>
 #include <stdexcept>
 
@@ -67,7 +68,16 @@ std::string UInt :: str () const
     uint64_t hi = (g_value128() >> 64);
     uint64_t lo = g_value128();
     std::stringstream ss;
-    ss << "0x" << std::hex << hi << std::hex << lo;
+    if (bits == 128)
+        ss << std::hex << "0x"
+           << std::setfill('0') << std::setw(16) << hi
+           << std::setfill('0') << std::setw(16) << lo;
+    else if (bits == 1) {
+        ss << std::hex << std::setw(1) << "0x" << std::setw(1) << lo;
+    }
+    else
+        ss << std::hex << "0x"
+           << std::setfill('0') << std::setw(bits/4) << lo;
     return ss.str();
 }
 
