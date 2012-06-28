@@ -23,11 +23,12 @@ class Translator {
         int register_to64    (int reg);
         
         uint64_t           operand_lval (int bits, struct ud_operand operand);
-        void               operand_set (ud_t * ud_obj, int operand_i, uint64_t address, InstructionOperand & value);
-        InstructionOperand operand_get (ud_t * ud_obj, int operand_i, uint64_t address);
-        InstructionOperand operand     (ud_t * ud_obj, int operand_i, uint64_t address);
-        
-        void add_flags (ud_t * ud_obj, uint64_t address);
+        void               operand_set  (ud_t * ud_obj, int operand_i, uint64_t address, InstructionOperand & value);
+        InstructionOperand operand_load (ud_t * ud_obj, int operand_i, uint64_t address, int bits);
+        InstructionOperand operand_get  (ud_t * ud_obj, int operand_i, uint64_t address);
+        InstructionOperand operand      (ud_t * ud_obj, int operand_i, uint64_t address);
+
+        void jcc       (ud_t * ud_obj, uint64_t address, InstructionOperand cond);
         
         void adc       (ud_t * ud_obj, uint64_t address);
         void add       (ud_t * ud_obj, uint64_t address);

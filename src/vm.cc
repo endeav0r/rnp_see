@@ -130,7 +130,7 @@ void VM :: step ()
 
     std::list <Instruction *> :: iterator it;
     for (it = instructions.begin(); it != instructions.end(); it++) {
-        //std::cout << (*it)->str() << std::endl;
+        std::cout << (*it)->str() << std::endl;
              EXECUTE(InstructionAdd)
         else EXECUTE(InstructionAnd)
         else EXECUTE(InstructionAssign)
@@ -257,7 +257,7 @@ void VM :: execute (InstructionLoad * load)
         break;
     default :
         std::stringstream ss;
-        ss << "Tried to load invalid bit size: " << src.g_bits();
+        ss << "Tried to load invalid bit size: " << load->g_bits();
         throw std::runtime_error(ss.str());
     }
 
