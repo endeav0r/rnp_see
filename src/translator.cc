@@ -451,6 +451,25 @@ void Translator :: jcc (ud_t * ud_obj, uint64_t address, InstructionOperand cond
 }
 
 
+void Translator :: cmovcc (ud_t * ud_obj, uint64_t address, InstructionOperand cond)
+{
+
+    size_t size = ud_insn_len(ud_obj);
+
+    InstructionOperand dst = operand_get(ud_obj, 0, address);
+    InstructionOperand src = operand_get(ud_obj, 1, address);
+    InstructionOperand tmp (OPTYPE_VAR, dst.g_bits());
+    InstructionOperand notCond (OPTYPE_VAR, 1);
+
+    instructions.push_back(new InstructionNot(address, size, notCond, cond));
+    instructions.push_back(new InstructionMul(address, size, dst, dst, notCond));
+    instructions.push_back(new InstructionMul(address, size, tmp, src, cond));
+    instructions.push_back(new InstructionOr(address, size, dst, dst, tmp));
+
+    operand_set(ud_obj, 0, address, dst);
+}
+
+
 void Translator :: adc (ud_t * ud_obj, uint64_t address)
 {
     size_t size = ud_insn_len(ud_obj);
@@ -613,24 +632,15 @@ void Translator :: cmova (ud_t * ud_obj, uint64_t address)
 {
     size_t size = ud_insn_len(ud_obj);
 
-    InstructionOperand dst = operand_get(ud_obj, 0, address);
-    InstructionOperand src = operand_get(ud_obj, 1, address);
-
     InstructionOperand ZF        (OPTYPE_VAR, 1, "ZF");
     InstructionOperand CF        (OPTYPE_VAR, 1, "CF");
     InstructionOperand CFandZF    (OPTYPE_VAR, 1);
     InstructionOperand notCFandZF (OPTYPE_VAR, 1);
 
     instructions.push_back(new InstructionOr(address, size, CFandZF, CF, ZF));
-
-    InstructionOperand tmp (OPTYPE_VAR, dst.g_bits());
-
     instructions.push_back(new InstructionNot(address, size, notCFandZF, CFandZF));
-    instructions.push_back(new InstructionMul(address, size, dst, dst, notCFandZF));
-    instructions.push_back(new InstructionMul(address, size, tmp, src, CFandZF));
-    instructions.push_back(new InstructionOr(address, size, dst, dst, tmp));
 
-    operand_set(ud_obj, 0, address, dst);
+    cmovcc(ud_obj, address, notCFandZF);
 }
 
 
@@ -638,24 +648,13 @@ void Translator :: cmovbe (ud_t * ud_obj, uint64_t address)
 {
     size_t size = ud_insn_len(ud_obj);
 
-    InstructionOperand dst = operand_get(ud_obj, 0, address);
-    InstructionOperand src = operand_get(ud_obj, 1, address);
-
     InstructionOperand ZF        (OPTYPE_VAR, 1, "ZF");
     InstructionOperand CF        (OPTYPE_VAR, 1, "CF");
     InstructionOperand CForZF    (OPTYPE_VAR, 1);
-    InstructionOperand notCForZF (OPTYPE_VAR, 1);
 
     instructions.push_back(new InstructionOr(address, size, CForZF, CF, ZF));
 
-    InstructionOperand tmp (OPTYPE_VAR, dst.g_bits());
-
-    instructions.push_back(new InstructionNot(address, size, notCForZF, CForZF));
-    instructions.push_back(new InstructionMul(address, size, dst, dst, notCForZF));
-    instructions.push_back(new InstructionMul(address, size, tmp, src, CForZF));
-    instructions.push_back(new InstructionOr(address, size, dst, dst, tmp));
-
-    operand_set(ud_obj, 0, address, dst);
+    cmovcc(ud_obj, address, CForZF);
 }
 
 
@@ -663,62 +662,28 @@ void Translator :: cmovnz (ud_t * ud_obj, uint64_t address)
 {
     size_t size = ud_insn_len(ud_obj);
 
-    InstructionOperand dst = operand_get(ud_obj, 0, address);
-    InstructionOperand src = operand_get(ud_obj, 1, address);
-
     InstructionOperand ZF    (OPTYPE_VAR, 1, "ZF");
     InstructionOperand notZF (OPTYPE_VAR, 1);
 
-    InstructionOperand tmp (OPTYPE_VAR, dst.g_bits());
-
     instructions.push_back(new InstructionNot(address, size, notZF, ZF));
-    instructions.push_back(new InstructionMul(address, size, dst, dst, ZF));
-    instructions.push_back(new InstructionMul(address, size, tmp, src, notZF));
-    instructions.push_back(new InstructionOr(address, size, dst, dst, tmp));
 
-    operand_set(ud_obj, 0, address, dst);
+    cmovcc(ud_obj, address, notZF);
 }
 
 
 void Translator :: cmovs (ud_t * ud_obj, uint64_t address)
 {
-    size_t size = ud_insn_len(ud_obj);
+    InstructionOperand SF (OPTYPE_VAR, 1, "SF");
 
-    InstructionOperand dst = operand_get(ud_obj, 0, address);
-    InstructionOperand src = operand_get(ud_obj, 1, address);
-
-    InstructionOperand SF    (OPTYPE_VAR, 1, "SF");
-    InstructionOperand notSF (OPTYPE_VAR, 1);
-
-    InstructionOperand tmp (OPTYPE_VAR, dst.g_bits());
-
-    instructions.push_back(new InstructionNot(address, size, notSF, SF));
-    instructions.push_back(new InstructionMul(address, size, dst, dst, notSF));
-    instructions.push_back(new InstructionMul(address, size, tmp, src, SF));
-    instructions.push_back(new InstructionOr(address, size, dst, dst, tmp));
-
-    operand_set(ud_obj, 0, address, dst);
+    cmovcc(ud_obj, address, SF);
 }
 
 
 void Translator :: cmovz (ud_t * ud_obj, uint64_t address)
 {
-    size_t size = ud_insn_len(ud_obj);
+    InstructionOperand ZF (OPTYPE_VAR, 1, "ZF");
 
-    InstructionOperand dst = operand_get(ud_obj, 0, address);
-    InstructionOperand src = operand_get(ud_obj, 1, address);
-
-    InstructionOperand ZF    (OPTYPE_VAR, 1, "ZF");
-    InstructionOperand notZF (OPTYPE_VAR, 1);
-
-    InstructionOperand tmp (OPTYPE_VAR, dst.g_bits());
-
-    instructions.push_back(new InstructionNot(address, size, notZF, ZF));
-    instructions.push_back(new InstructionMul(address, size, dst, dst, notZF));
-    instructions.push_back(new InstructionMul(address, size, tmp, src, ZF));
-    instructions.push_back(new InstructionOr(address, size, dst, dst, tmp));
-
-    operand_set(ud_obj, 0, address, dst);
+    cmovcc(ud_obj, address, ZF);
 }
 
 
