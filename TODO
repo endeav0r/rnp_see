@@ -9,6 +9,9 @@ Translator :: translate ()
     movqa instructions just calls movq.
     movdqa just calls movdqu.
 
+Translator :: scasb ()
+    Is supposed to compare against ES:RDI, but currently just uses RDI
+
 udis86 incorrectly detects movdqa instruction as movqa. submit bug report.
 
 Translator :: *

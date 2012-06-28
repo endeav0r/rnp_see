@@ -73,13 +73,17 @@ void Kernel :: sys_fstat (std::map <uint64_t, SymbolicValue> & variables, Memory
 
     int result = fstat(rdi.g_uint64(), &buf);
 
-    //memory.s_data(rsi.g_uint64(), (const uint8_t *) &buf, sizeof(struct stat));
+    memory.s_data(rsi.g_uint64(), (const uint8_t *) &buf, sizeof(struct stat));
 
     variables[InstructionOperand::str_to_id("UD_R_RAX")] = SymbolicValue(64, result);
 
     #ifdef DEBUG
     std::cerr << "SYS_FSTAT rdi=" << rdi.str() << ", "
               << "rsi=" << rsi.str() << ", "
+              << "stat.st_dev=" << std::hex << buf.st_dev << ", "
+              << "stat.st_rdev=" << std::hex << buf.st_rdev << ", "
+              << "stat.st_ino=" << std::hex << buf.st_ino << ", "
+              << "stat.st_mode=" << std::hex << buf.st_mode << ", "
               << "result_rax=" << variables[InstructionOperand::str_to_id("UD_R_RAX")].str()
               << std::endl;
     #endif

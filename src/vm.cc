@@ -6,7 +6,7 @@
 
 #include "kernel.h"
 
-//#define DEBUG
+#define DEBUG
 
 void VM :: debug_x86_registers ()
 {

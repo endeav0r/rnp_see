@@ -247,26 +247,28 @@ std::string register128_name (int reg, bool low)
 void Translator :: operand_set (ud_t * ud_obj, int operand_i, uint64_t address, InstructionOperand & value)
 {
     size_t size = ud_insn_len(ud_obj);
-    InstructionOperand lhs = operand(ud_obj, operand_i, address);
 
-    if (ud_obj->operand[operand_i].type == UD_OP_MEM)
+    if (ud_obj->operand[operand_i].type == UD_OP_MEM) {
+        InstructionOperand lhs = operand(ud_obj, operand_i, address);
         instructions.push_back(new InstructionStore(address,
                                                     ud_insn_len(ud_obj),
                                                     ud_obj->operand[operand_i].size,
                                                     lhs,
                                                     value));
+    }
     // register assignments always take place on the full size of the register
     else if (ud_obj->operand[operand_i].type == UD_OP_REG) {
         // special case for special AH/BH etc registers
         switch (ud_obj->operand[operand_i].base) {
         case UD_R_AH :
             // move value into appropriate place
-            InstructionOperand tmpValue (OPTYPE_VAR, 16);
+            InstructionOperand tmpValue (OPTYPE_VAR, 64);
             InstructionOperand eight    (OPTYPE_CONSTANT, 8, 8);
-            instructions.push_back(new InstructionShl(address, size, tmpValue, value, eight));
+            instructions.push_back(new InstructionAssign(address, size, tmpValue, value));
+            instructions.push_back(new InstructionShl(address, size, tmpValue, tmpValue, eight));
             // zero out appropriate spot in destination register
             InstructionOperand rax     (OPTYPE_VAR, 64, "UD_R_RAX");
-            InstructionOperand ff00    (OPTYPE_CONSTANT, 64, 0x000000000000ff00ULL);
+            InstructionOperand ff00    (OPTYPE_CONSTANT, 64, 0xffffffffffff00ffULL);
             instructions.push_back(new InstructionAnd(address, size, rax, rax, ff00));
             // or value with rax
             instructions.push_back(new InstructionOr(address, size, rax, rax, tmpValue));
