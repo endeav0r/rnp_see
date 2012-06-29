@@ -1,4 +1,23 @@
 /*
+    Copyright 2012 Alex Eubanks (endeavor[at]rainbowsandpwnies.com)
+
+    This file is part of rnp_see ( http://github.com/endeav0r/rnp_see/ )
+
+    rnp_see is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+/*
  * This instruction set borrows heavily from RREIL, detailed in the paper
  * Precise Static Analysis of Binaries by Extracting Relational Information
  * www2.in.tum.de/bib/files/sepp11precise.pdf
@@ -170,15 +189,6 @@ class InstructionAssign : public Instruction {
         std::string str();
         InstructionOperand g_dst () { return dst; }
         InstructionOperand g_src () { return src; }
-};
-
-class InstructionCall : public Instruction {
-    public :
-        InstructionOperand dst;
-        
-        InstructionCall (uint64_t address, uint32_t size, InstructionOperand dst)
-            : Instruction(address, size), dst(dst) {}
-        std::string str ();
 };
 
 class InstructionNot : public Instruction {

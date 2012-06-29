@@ -24,6 +24,4 @@ Translator :: *
 
 Update the README
 
-Create a Makefile
-
 Catch malloc errors (new), especially in page.cc

@@ -1,3 +1,22 @@
+/*
+    Copyright 2012 Alex Eubanks (endeavor[at]rainbowsandpwnies.com)
+
+    This file is part of rnp_see ( http://github.com/endeav0r/rnp_see/ )
+
+    rnp_see is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #include "translator.h"
 
 #include <udis86.h>
@@ -91,6 +110,7 @@ std::list <Instruction *> Translator :: translate (uint64_t address, uint8_t * d
         case UD_Idiv       : div       (&ud_obj, address + ud_insn_off(&ud_obj)); break;
         case UD_Ihlt       : hlt       (&ud_obj, address + ud_insn_off(&ud_obj)); break;
         case UD_Iimul      : imul      (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Iinc       : inc       (&ud_obj, address + ud_insn_off(&ud_obj)); break;
         case UD_Ija        : ja        (&ud_obj, address + ud_insn_off(&ud_obj)); break;
         case UD_Ijae       : jae       (&ud_obj, address + ud_insn_off(&ud_obj)); break;
         case UD_Ijb        : jb        (&ud_obj, address + ud_insn_off(&ud_obj)); break;
@@ -111,6 +131,7 @@ std::list <Instruction *> Translator :: translate (uint64_t address, uint8_t * d
         case UD_Imovq      : movq      (&ud_obj, address + ud_insn_off(&ud_obj)); break;
         case UD_Imovqa     : movqa     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
         case UD_Imovsd     : movsd     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Imovsq     : movsq     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
         case UD_Imovsx     : movsx     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
         case UD_Imovsxd    : movsxd    (&ud_obj, address + ud_insn_off(&ud_obj)); break;
         case UD_Imovzx     : movzx     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
@@ -156,7 +177,8 @@ std::list <Instruction *> Translator :: translate (uint64_t address, uint8_t * d
         if (ud_obj.pfx_rep) {
             if (ud_obj.pfx_rep == UD_Irep) {
                 switch (ud_obj.mnemonic) {
-                case UD_Istosd : rep (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+                case UD_Istosd :
+                case UD_Imovsq : rep (&ud_obj, address + ud_insn_off(&ud_obj)); break;
                 case UD_Iret   : break; // stupid amd branch predictor bug workaround
                 default :
                     throw std::runtime_error("unhandled rep prefix");
@@ -785,25 +807,24 @@ void Translator :: cmpxchg (ud_t * ud_obj, uint64_t address)
 
 void Translator :: dec (ud_t * ud_obj, uint64_t address)
 {
+    size_t size = ud_insn_len(ud_obj);
 
-    InstructionOperand lhs = operand_get(ud_obj, 0, address);
-    InstructionOperand one (OPTYPE_CONSTANT, lhs.g_bits(), 1);
-    InstructionOperand tmp (OPTYPE_VAR, lhs.g_bits());
+    InstructionOperand dst = operand_get(ud_obj, 0, address);
+    InstructionOperand one (OPTYPE_CONSTANT, dst.g_bits(), 1);
+    InstructionOperand tmp (OPTYPE_VAR, dst.g_bits());
+
+    instructions.push_back(new InstructionSub(address, size, tmp, dst, one));
         
-    InstructionOperand OFTmp    (OPTYPE_VAR, lhs.g_bits());
-    InstructionOperand OFTmpShl (OPTYPE_CONSTANT, lhs.g_bits(), lhs.g_bits() - 1);
-    InstructionOperand OF       (OPTYPE_VAR, 1, "OF"); // signed overflow
-    InstructionOperand ZF       (OPTYPE_VAR, 1, "ZF");
-    InstructionOperand SF       (OPTYPE_VAR, 1, "SF"); // "negative" flag
-    InstructionOperand zero     (OPTYPE_CONSTANT, tmp.g_bits(), 0);
-    
-    instructions.push_back(new InstructionSub(address, ud_insn_len(ud_obj), tmp, lhs, one));
-    
-    instructions.push_back(new InstructionXor(address, ud_insn_len(ud_obj), OFTmp, tmp,   lhs));
-    instructions.push_back(new InstructionShr(address, ud_insn_len(ud_obj), OF,    OFTmp, OFTmpShl));
-    
-    instructions.push_back(new InstructionCmpEq (address, ud_insn_len(ud_obj), ZF, tmp, zero));
-    instructions.push_back(new InstructionCmpLts(address, ud_insn_len(ud_obj), SF, tmp, zero));
+    InstructionOperand OF (OPTYPE_VAR, 1, "OF");
+    InstructionOperand ZF (OPTYPE_VAR, 1, "ZF");
+    InstructionOperand SF (OPTYPE_VAR, 1, "SF");
+    InstructionOperand SFxorOF (OPTYPE_VAR, 1);
+    InstructionOperand zero (OPTYPE_CONSTANT, dst.g_bits(), 0);
+
+    instructions.push_back(new InstructionCmpLts(address, size, SF, tmp, zero));
+    instructions.push_back(new InstructionCmpEq(address, size, ZF, tmp, zero));
+    instructions.push_back(new InstructionCmpLts(address, size, SFxorOF, tmp, dst));
+    instructions.push_back(new InstructionXor(address, size, OF, SFxorOF, SF));
     
     operand_set(ud_obj, 0, address, tmp);
 }
@@ -873,6 +894,31 @@ void Translator :: imul (ud_t * ud_obj, uint64_t address)
     }
     else
         throw std::runtime_error("unsupported imul, only 2 operand imul supported");
+}
+
+
+void Translator :: inc (ud_t * ud_obj, uint64_t address)
+{
+    size_t size = ud_insn_len(ud_obj);
+
+    InstructionOperand dst = operand_get(ud_obj, 0, address);
+    InstructionOperand tmp (OPTYPE_VAR, dst.g_bits());
+    InstructionOperand one (OPTYPE_CONSTANT, dst.g_bits(), 1);
+
+    instructions.push_back(new InstructionAdd(address, size, tmp, dst, one));
+
+    InstructionOperand OF (OPTYPE_VAR, 1, "OF");
+    InstructionOperand ZF (OPTYPE_VAR, 1, "ZF");
+    InstructionOperand SF (OPTYPE_VAR, 1, "SF");
+    InstructionOperand SFxorOF (OPTYPE_VAR, 1);
+    InstructionOperand zero (OPTYPE_CONSTANT, dst.g_bits(), 0);
+
+    instructions.push_back(new InstructionCmpLts(address, size, SF, tmp, zero));
+    instructions.push_back(new InstructionCmpEq(address, size, ZF, tmp, zero));
+    instructions.push_back(new InstructionCmpLts(address, size, SFxorOF, tmp, dst));
+    instructions.push_back(new InstructionXor(address, size, OF, SFxorOF, SF));
+
+    operand_set(ud_obj, 0, address, tmp);
 }
 
 
@@ -1102,10 +1148,35 @@ void Translator :: movsd (ud_t * ud_obj, uint64_t address)
 {
     size_t size = ud_insn_len(ud_obj);
 
+    if (ud_obj->operand[0].type == UD_NONE)
+        throw std::runtime_error("movsd operand[0] == UD_NONE. IMPLEMENT THIS!");
+
     InstructionOperand dst = operand_get(ud_obj, 0, address);
     InstructionOperand src = operand_get(ud_obj, 1, address);
 
     instructions.push_back(new InstructionAssign(size, address, dst, src));
+}
+
+
+void Translator :: movsq (ud_t * ud_obj, uint64_t address)
+{
+    size_t size = ud_insn_len(ud_obj);
+
+    InstructionOperand rsi (OPTYPE_VAR, 64, "UD_R_RSI");
+    InstructionOperand rdi (OPTYPE_VAR, 64, "UD_R_RDI");
+
+    instructions.push_back(new InstructionStore(address, size, 64, rdi, rsi));
+
+    InstructionOperand DF     (OPTYPE_VAR, 1, "DF");
+    InstructionOperand neg16  (OPTYPE_CONSTANT, 64, -16);
+    InstructionOperand eight  (OPTYPE_CONSTANT, 64, 8);
+    InstructionOperand add    (OPTYPE_VAR, 64);
+    InstructionOperand addTmp (OPTYPE_VAR, 64);
+    instructions.push_back(new InstructionAssign(address, size, add, eight));
+    instructions.push_back(new InstructionMul(address, size, addTmp, neg16, DF));
+    instructions.push_back(new InstructionAdd(address, size, add, add, addTmp));
+    instructions.push_back(new InstructionAdd(address, size, rdi, rdi, add));
+    instructions.push_back(new InstructionAdd(address, size, rsi, rsi, add));
 }
 
 
@@ -1264,19 +1335,17 @@ void Translator :: neg (ud_t * ud_obj, uint64_t address)
     instructions.push_back(new InstructionSub(address, size, tmp, zero, src));
 
     InstructionOperand CF (OPTYPE_VAR, 1, "CF");
-    InstructionOperand SF (OPTYPE_VAR, 1, "CF");
-    InstructionOperand ZF (OPTYPE_VAR, 1, "CF");
+    InstructionOperand SF (OPTYPE_VAR, 1, "SF");
+    InstructionOperand ZF (OPTYPE_VAR, 1, "ZF");
 
     instructions.push_back(new InstructionCmpEq(address, size, CF, src, zero));
     instructions.push_back(new InstructionCmpEq(address, size, ZF, tmp, zero));
     instructions.push_back(new InstructionCmpLts(address, size, SF, tmp, zero));
 
-    // this is borrowed from sub instruction. correctness needs to be checked
-    InstructionOperand OFTmp    (OPTYPE_VAR, src.g_bits());
-    InstructionOperand OFTmpShl (OPTYPE_CONSTANT, src.g_bits(), src.g_bits() - 1);
-    InstructionOperand OF (OPTYPE_VAR, 1, "CF");
-    instructions.push_back(new InstructionXor(address, ud_insn_len(ud_obj), OFTmp, tmp,   zero));
-    instructions.push_back(new InstructionShr(address, ud_insn_len(ud_obj), OF,    OFTmp, OFTmpShl));
+    InstructionOperand SFxorOF    (OPTYPE_VAR, 1);
+    InstructionOperand OF (OPTYPE_VAR, 1, "OF");
+    instructions.push_back(new InstructionCmpLts(address, size, SFxorOF, tmp, src));
+    instructions.push_back(new InstructionXor(address, size, OF, SFxorOF, SF));
 
     operand_set(ud_obj, 0, address, tmp);
 }
@@ -1687,10 +1756,7 @@ void Translator :: sbb (ud_t * ud_obj, uint64_t address)
     InstructionOperand lhs = operand_get(ud_obj, 0, address);
     InstructionOperand rhs = operand_get(ud_obj, 1, address);
     InstructionOperand tmp (OPTYPE_VAR, lhs.g_bits());
-        
-    InstructionOperand OFTmp    (OPTYPE_VAR, lhs.g_bits());
-    InstructionOperand OFTmpShl (OPTYPE_CONSTANT, lhs.g_bits(), lhs.g_bits() - 1);
-    InstructionOperand OF       (OPTYPE_VAR, 1, "OF"); // signed overflow
+
     InstructionOperand CF       (OPTYPE_VAR, 1, "CF"); // unsigned overflow
     InstructionOperand ZF       (OPTYPE_VAR, 1, "ZF");
     InstructionOperand SF       (OPTYPE_VAR, 1, "SF"); // "negative" flag
@@ -1699,12 +1765,14 @@ void Translator :: sbb (ud_t * ud_obj, uint64_t address)
     instructions.push_back(new InstructionAdd(address, size, tmp, rhs, CF));
     instructions.push_back(new InstructionSub(address, size, tmp, lhs, tmp));
     
-    instructions.push_back(new InstructionXor(address, size, OFTmp, tmp,   lhs));
-    instructions.push_back(new InstructionShr(address, size, OF,    OFTmp, OFTmpShl));
-    
     instructions.push_back(new InstructionCmpLtu(address, size, CF, lhs, tmp));
     instructions.push_back(new InstructionCmpEq (address, size, ZF, tmp, zero));
     instructions.push_back(new InstructionCmpLts(address, size, SF, tmp, zero));
+
+    InstructionOperand SFxorOF    (OPTYPE_VAR, 1);
+    InstructionOperand OF (OPTYPE_VAR, 1, "OF");
+    instructions.push_back(new InstructionCmpLts(address, size, SFxorOF, tmp, rhs));
+    instructions.push_back(new InstructionXor(address, size, OF, SFxorOF, SF));
     
     operand_set(ud_obj, 0, address, tmp);
 }
@@ -1955,14 +2023,17 @@ void Translator :: stosd (ud_t * ud_obj, uint64_t address)
     // store at location rdi
     InstructionOperand rdi (OPTYPE_VAR, 64, "UD_R_RDI");
     instructions.push_back(new InstructionStore(address, size, 32, rdi, eax));
+
     // if DF == 0 then rdi += 4, if DF == 1 then rdi -= 4
-    InstructionOperand DF    (OPTYPE_VAR, 1, "DF");
-    InstructionOperand four  (OPTYPE_CONSTANT, 64, 4);
-    InstructionOperand eight (OPTYPE_CONSTANT, 64, 8);
-    InstructionOperand tmp   (OPTYPE_VAR, 64);
-    instructions.push_back(new InstructionMul(address, size, tmp, eight, DF));
-    instructions.push_back(new InstructionSub(address, size, tmp, four, tmp));
-    instructions.push_back(new InstructionAdd(address, size, rdi, rdi, tmp));
+    InstructionOperand DF     (OPTYPE_VAR, 1, "DF");
+    InstructionOperand neg2   (OPTYPE_CONSTANT, 64, -8);
+    InstructionOperand one    (OPTYPE_CONSTANT, 64, 4);
+    InstructionOperand add    (OPTYPE_VAR, 64);
+    InstructionOperand addTmp (OPTYPE_VAR, 64);
+    instructions.push_back(new InstructionAssign(address, size, add, one));
+    instructions.push_back(new InstructionMul(address, size, addTmp, neg2, DF));
+    instructions.push_back(new InstructionAdd(address, size, add, add, addTmp));
+    instructions.push_back(new InstructionAdd(address, size, rdi, rdi, add));
 }
 
 
