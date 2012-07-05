@@ -23,33 +23,61 @@
 #include <sstream>
 
 #include <inttypes.h>
-#include <cstdio>
+#include <stdio.h>
+#include <stdlib.h>
+#include <getopt.h>
 
 #include <udis86.h>
 
+#include "elf.h"
 #include "instruction.h"
+#include "lx86.h"
 #include "translator.h"
 
 #include "vm.h"
 
-std::string ud_disassemble_at_address (unsigned char * data)
+void help (std::string name)
 {
-    ud_t ud_obj;
-    
-    ud_init(&ud_obj);
-    ud_set_mode(&ud_obj, 64);
-    ud_set_syntax(&ud_obj, UD_SYN_INTEL);
-    ud_set_input_buffer(&ud_obj, data, 16);
-    
-    ud_disassemble(&ud_obj);
-    
-    return ud_insn_asm(&ud_obj);
+    std::cout << "Usage: " << name << " <loader> <filename>" << std::endl;
+    std::cout << "   Loader: You must specify a loader" << std::endl;
+    std::cout << "   --elf    attempts to load the binary directly from the elf" << std::endl;
+    std::cout << "   --lx86   forks the x86 linux process, breaks at entry, and loads" << std::endl;
 }
-
 
 int main (int argc, char * argv[])
 {
-    VM vm(argv[1]);
+    int loader_type = 0;
+    int option_index = 0;
+
+    struct option options [] = {
+        {"lx86", no_argument, &loader_type, 1},
+        {"elf",  no_argument, &loader_type, 2}
+    };
+
+    while (true) {
+        int c = getopt_long(argc, argv, "", options, &option_index);
+        if (c == -1) break;
+
+        switch(c) {
+            case '?' :
+                help(argv[0]);
+                return -1;
+        }
+    }
+
+    if (loader_type == 0) {
+        help(argv[0]);
+        return -1;
+    }
+
+    VM vm(new Lx86(argv[optind]));
+
+    /*
+    if (loader_type == 1)
+        vm = VM(new Lx86(argv[optind]), true);
+    else
+        vm = VM(Elf::Get(argv[optind]), true);
+    */
 
     vm.debug_x86_registers();
     
@@ -61,6 +89,7 @@ int main (int argc, char * argv[])
         if (c == 'd') { for (int i = 0; i < 8; i++) vm.step(); }
         if (c == 'f') { for (int i = 0; i < 16; i++) vm.step(); }
         if (c == 'g') { for (int i = 0; i < 128; i++) vm.step(); }
+        if (c == 'q') break;
         if (c == 'r') vm.debug_x86_registers();
         if (c == 's') vm.step();
         if (c == 't') { for (int i = 0; i < 500; i++) vm.step(); break; }

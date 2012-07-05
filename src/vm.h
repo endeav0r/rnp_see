@@ -32,14 +32,17 @@ class VM {
     private :
         uint64_t   ip_id;
 
-        Elf *      elf;
+        Loader *   loader;
         Kernel     kernel;
         Memory     memory;
         Translator translator;
+        bool       delete_loader;
 
         std::map <uint64_t, SymbolicValue> variables;
 
         const SymbolicValue g_value (InstructionOperand operand);
+
+        void init ();
 
         void execute (InstructionAdd    *    );
         void execute (InstructionAnd    *    );
@@ -66,7 +69,9 @@ class VM {
         void execute (Instruction * instruction);
 
     public :
-        VM (std::string filename);
+        VM (Loader * loader);
+        VM (Loader * loader, bool delete_loader);
+        VM () : loader(NULL), delete_loader(false) { delete_loader = false; }
         ~VM ();
 
         void step ();

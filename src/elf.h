@@ -26,6 +26,7 @@
 #include <list>
 #include <map>
 
+#include "loader.h"
 #include "memory.h"
 #include "page.h"
 #include "symbolicvalue.h"
@@ -42,14 +43,14 @@ const uint64_t ELF64_STACK_SIZE = 0x4000ULL;
 const uint64_t ELF64_RSP_INIT   = 0x7fff000000003000ULL;
 const uint64_t ELF64_FS_INIT    = 0x7ffe000000000000ULL;
 
-class Elf {
+class Elf : public Loader {
     protected :
         const uint8_t * data;
         size_t data_size;
 
         std::map <uint64_t, Page *> fix_pages (std::multimap <uint64_t, Page *> pages);
     public :
-        virtual ~Elf () {};
+        virtual ~Elf () {}
         virtual std::string                        func_symbol (uint64_t address) = 0;
         virtual uint64_t                           g_entry     () = 0;
         virtual Memory                             g_memory    () = 0;

@@ -23,13 +23,16 @@
 #include <stdexcept>
 #include <sstream>
 
-//#define DEBUG
+#define DEBUG
 
 void Memory :: destroy ()
 {
     std::map <uint64_t, Page *> :: iterator it;
 
     for (it = pages.begin(); it != pages.end(); it++) {
+        #ifdef DEBUG
+        std::cerr << "Memory deleting page: " << std::hex << it->first << std::endl;
+        #endif
         // if this is dirty, destroy it once for everytime in dirty_counter
         if (dirty.count(it->first) > 0) {
             for (int i = 0; i < dirty_counter[it->first]; i++) {

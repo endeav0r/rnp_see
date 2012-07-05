@@ -49,7 +49,7 @@ Page * Page :: destroy ()
     std::cerr << "Page::destroy()" << std::endl;
     #endif
 
-    delete[] this->data;
+    delete[] data;
     Page * result = this->parent;
     delete this;
     return result;

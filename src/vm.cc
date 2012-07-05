@@ -78,16 +78,9 @@ const SymbolicValue VM :: g_value (InstructionOperand operand)
     return variables[operand.g_id()];
 }
 
-// this works like a loader
-VM :: VM (std::string filename)
+
+void VM :: init ()
 {
-    #ifdef DEBUG
-    std::cerr << "loading ELF" << std::endl;
-    #endif
-
-    elf = Elf::Get(filename);
-
-
     #ifdef DEBUG
     std::cerr << "loading translator" << std::endl;
     #endif    
@@ -96,26 +89,49 @@ VM :: VM (std::string filename)
     #ifdef DEBUG
     std::cerr << "getting memory" << std::endl;
     #endif
-    memory     = elf->g_memory();
+    memory     = loader->g_memory();
 
     #ifdef DEBUG
     std::cerr << "getting variables" << std::endl;
     #endif
-    variables  = elf->g_variables();
+    variables  = loader->g_variables();
 
     #ifdef DEBUG
     std::cerr << "getting instruction pointer id" << std::endl;
     #endif
-    ip_id      = elf->g_ip_id();
+    ip_id      = loader->g_ip_id();
 
     std::cout << "Memory mmap: " << std::endl << memory.memmap() << std::endl;
 }
 
 
+VM :: VM (Loader * loader)
+{
+    this->loader = loader;
+    delete_loader = false;
+
+    init();
+}
+
+
+VM :: VM (Loader * loader, bool delete_loader)
+{
+    this->loader = loader;
+    this->delete_loader = delete_loader;
+
+    init();
+}
+
+
 VM :: ~VM ()
 {
+    std::cerr << "~VM ";
+    if (delete_loader == true) {
+        std::cerr << "delete_loader";
+        //delete loader;
+    }
+    std::cerr << std::endl;
     memory.destroy();
-    delete elf;
 }
 
 
@@ -125,9 +141,11 @@ void VM :: step ()
     std::list <Instruction *> instructions;
 
     // if there is a symbol name for this location, print it out
-    std::string symbol_name = elf->func_symbol(variables[ip_id].g_uint64());
+    /*
+    std::string symbol_name = loader->func_symbol(variables[ip_id].g_uint64());
     if (symbol_name != "")
         std::cout << "SYMBOL: " << symbol_name << " :" << std::endl;
+    */
 
     instructions = translator.translate(ip_addr,
                                         memory.g_data(ip_addr),
