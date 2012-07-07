@@ -24,6 +24,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <sstream>
+#include <unistd.h>
 
 #include "instruction.h"
 
