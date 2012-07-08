@@ -1,6 +1,7 @@
 #ifndef lx86_HEADER
 #define lx86_HEADER
 
+#include <list>
 #include <map>
 #include <sys/ptrace.h>
 
@@ -11,7 +12,8 @@
 
 class Lx86 : public Loader {
 	private :
-		Elf * elf;
+		// we keep all elfs here so we can call func_symbol on them
+		std::list <Elf *> elfs;
 		pid_t pid;
 
 	public :
@@ -19,10 +21,13 @@ class Lx86 : public Loader {
 		~Lx86 ();
 
 		std::string                        func_symbol (uint64_t address);
-		uint64_t                           g_entry     ();
 		Memory                             g_memory    ();
 		std::map <uint64_t, SymbolicValue> g_variables ();
 		uint64_t                           g_ip_id     ();
+
+		// these are special methods used for debugging
+		void step();
+		void g_regs (struct user_regs_struct * regs);
 };
 
 #endif

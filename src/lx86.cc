@@ -1,6 +1,7 @@
 #include "lx86.h"
 
 #include <fcntl.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/ptrace.h>
 #include <sys/stat.h>
@@ -8,6 +9,8 @@
 #include <sys/user.h>
 #include <sys/wait.h>
 #include <unistd.h>
+
+#include <set>
 
 #include <sstream>
 #include <stdexcept>
@@ -34,10 +37,18 @@ Lx86 :: Lx86 (std::string filename)
     std::cout << "child pid: " << pid << std::endl;
 
     // load the ELF for this process
-    elf = Elf :: Get(filename);
+    Elf * elf = Elf :: Get(filename);
+    uint64_t entry_address = elf->g_entry();
+    delete elf;
+
+    int status;
+    while (true) {
+        wait(&status);
+        if (WIFSTOPPED(status))
+            break;
+    }
 
     // set a breakpoint at the entry point
-    uint64_t entry_address = elf->g_entry();
     long saved_entry_bytes = ptrace(PTRACE_PEEKTEXT, pid, entry_address, NULL);
     long break_bytes = (saved_entry_bytes & (~0xff)) | 0xcc;
     ptrace(PTRACE_POKETEXT, pid, entry_address, break_bytes);
@@ -45,21 +56,11 @@ Lx86 :: Lx86 (std::string filename)
     // execute to breakpoint
     ptrace(PTRACE_CONT, pid, NULL, NULL);
 
-    int status;
     while (true) {
         wait(&status);
-        if (WIFEXITED(status))
-            std::cerr << "WIFEXITED" << std::endl;
-        if (WIFSIGNALED(status))
-            std::cerr << "WIFSIGNALED" << std::endl;
-        if (WIFCONTINUED(status))
-            std::cerr << "WIFCONTINUED" << std::endl;
-        if (WIFSTOPPED(status)) {
-            std::cerr << "WIFSTOPPED" << std::endl;
+        if (WIFSTOPPED(status))
             break;
-        }
     }
-    std::cerr << "lx86 wait status: " << std::dec << status << std::endl;
 
     // restore memory at breakpoint
     ptrace(PTRACE_POKETEXT, pid, entry_address, saved_entry_bytes);
@@ -69,17 +70,53 @@ Lx86 :: Lx86 (std::string filename)
     ptrace(PTRACE_GETREGS, pid, NULL, &regs);
     regs.rip = entry_address;
     ptrace(PTRACE_SETREGS, pid, NULL, &regs);
+
+    // load all elfs
+    std::stringstream ss;
+    ss << "/proc/" << (int) pid << "/maps";
+    FILE * maps_fh = fopen(ss.str().c_str(), "r");
+    if (maps_fh == NULL)
+        throw std::runtime_error("could not open file " + ss.str());
+
+    std::unordered_set <std::string> loaded_filenames;
+
+    std::string absolute_filename = realpath(filename.c_str(), NULL);
+
+    char line[512];
+    while (fgets(line, 512, maps_fh) != NULL) {
+        char str[128];
+        char elfname[128];
+        uint64_t offset;
+
+        sscanf(line, "%lx-%*s %*s %*s %*s %s %s", &offset, str, elfname);
+        if (loaded_filenames.count(elfname) == 0) {
+            loaded_filenames.insert(elfname);
+            if (absolute_filename == elfname) {
+                try {
+                    elfs.push_back(new Elf64(elfname, 0));
+                    std::cerr << elfname << " loaded " << std::endl;
+                }
+                catch (std::exception & e) {}
+            }
+            else {
+                try {
+                    elfs.push_back(new Elf64(elfname, offset));
+                    std::cerr << elfname << " loaded at " << std::hex << offset << std::endl;
+                }
+                catch (std::exception & e) {}
+            }
+        }
+    }
 }
 
 Lx86 :: ~Lx86 ()
 {
     std::cerr << "~Lx86" << std::endl;
-    delete elf;
-}
 
-uint64_t Lx86 :: g_entry ()
-{
-    return elf->g_entry();
+    std::list <Elf *> :: iterator it;
+    for (it = elfs.begin(); it != elfs.end(); it++) {
+        delete *it;
+    }
 }
 
 // props http://www.linuxjournal.com/article/6210?page=0,1
@@ -107,7 +144,7 @@ Memory Lx86 :: g_memory ()
         off64_t start;
         off64_t end;
         // find memory locations
-        sscanf(line, "%lx-%lx %s %*s %*s %*s %s", &start, &end, perms, str);
+        sscanf(line, "%lx-%lx %s %*s %*s %s", &start, &end, perms, str);
 
         if (perms[0] != 'r')
             continue;
@@ -177,5 +214,29 @@ uint64_t Lx86 :: g_ip_id ()
 
 std::string Lx86 :: func_symbol (uint64_t address)
 {
+    std::list <Elf *> :: iterator it;
+
+    for (it = elfs.begin(); it != elfs.end(); it++) {
+        std::string symbol = (*it)->func_symbol(address);
+        if (symbol != "") {
+            return symbol;
+        }
+    }
     return "";
+}
+
+void Lx86 :: step ()
+{
+    ptrace(PTRACE_SINGLESTEP, pid, NULL, NULL);
+    int status;
+    while (true) {
+        waitpid(pid, &status, 0);
+        if (WIFSTOPPED(status))
+            break;
+    }
+}
+
+void Lx86 :: g_regs (struct user_regs_struct * regs)
+{
+    ptrace(PTRACE_GETREGS, pid, NULL, regs);
 }

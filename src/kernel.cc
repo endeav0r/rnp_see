@@ -28,6 +28,7 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/uio.h>
 #include <unistd.h>
 
 #define DEBUG
@@ -43,11 +44,12 @@ void Kernel :: syscall (std::map <uint64_t, SymbolicValue> & variables, Memory &
         throw std::runtime_error("syscall called with wild rax");
 
     switch (rax.g_uint64()) {
-        case 0x1  : sys_write (variables, memory); break;
-        case 0x5  : sys_fstat (variables, memory); break;
-        case 0x9  : sys_mmap  (variables, memory); break;
-        case 0x27 : sys_getpid(variables, memory); break;
-        case 0x3c : sys_exit  (variables, memory); break;
+        case 0x1  : sys_write  (variables, memory); break;
+        case 0x5  : sys_fstat  (variables, memory); break;
+        case 0x9  : sys_mmap   (variables, memory); break;
+        case 0x14 : sys_writev (variables, memory); break;
+        case 0x27 : sys_getpid (variables, memory); break;
+        case 0x3c : sys_exit   (variables, memory); break;
         case 0xe7 : sys_exit_group(variables, memory); break;
         default :
             std::stringstream ss;
@@ -214,4 +216,32 @@ void Kernel :: sys_write (std::map <uint64_t, SymbolicValue> & variables, Memory
               << "result_rax=" << variables[InstructionOperand::str_to_id("UD_R_RAX")].str()
               << std::endl;
     #endif
+}
+
+
+void Kernel :: sys_writev (std::map <uint64_t, SymbolicValue> & variables, Memory & memory)
+{
+    FILE * fh;
+    std::stringstream filename;
+    size_t bytes_written = 0;
+
+    SymbolicValue rdi = variables[InstructionOperand::str_to_id("UD_R_RDI")];
+    SymbolicValue rsi = variables[InstructionOperand::str_to_id("UD_R_RSI")];
+    SymbolicValue rdx = variables[InstructionOperand::str_to_id("UD_R_RDX")];
+
+    int buf_n = rdx.g_uint64();
+
+    struct iovec * vec = (struct iovec *) memory.g_data(rsi.g_uint64());
+
+    filename << "fh_" << rdi.g_uint64();
+    fh = fopen(filename.str().c_str(), "wb");
+
+    for (int i = 0; i < buf_n; i++) {
+        bytes_written += vec->iov_len;
+        fwrite(memory.g_data((uint64_t) vec->iov_base), 1, vec->iov_len, fh);
+    }
+
+    fclose(fh);
+
+    variables[InstructionOperand::str_to_id("UD_R_RAX")] = SymbolicValue(64, bytes_written);
 }

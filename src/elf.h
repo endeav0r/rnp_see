@@ -70,25 +70,29 @@ class Elf32 : public Elf {
 
 class Elf64Symbol {
     private :
-        std::string name;
-        uint64_t offset;
-        uint64_t address;
-        uint8_t  binding;
-        uint16_t shndx;
+        const std::string name;
+        const uint64_t offset;
+        const uint64_t address;
+        const uint8_t  type;
+        const uint8_t  binding;
+        const uint16_t shndx;
     public :
         Elf64Symbol (const std::string name,
-                     uint64_t offset,
-                     uint64_t address,
-                     uint8_t  binding,
-                     uint16_t shndx)
-            : name(name), offset(offset), address(address), binding(binding), shndx(shndx) {}
-        Elf64Symbol () : name(""), offset(0), address(0), binding(0), shndx(0) {}
+                     const uint64_t offset,
+                     const uint64_t address,
+                     const uint8_t  type,
+                     const uint8_t  binding,
+                     const uint16_t shndx)
+            : name(name), offset(offset), address(address), type(type), binding(binding), shndx(shndx) {}
+        Elf64Symbol () : name(""), offset(0), address(0), type(0), binding(0), shndx(0) {}
         const std::string g_name    () const { return name; }
         const uint64_t    g_offset  () const { return offset; }
         const uint64_t    g_address () const { return address; }
+        const uint8_t     g_type    () const { return type; }
         const uint8_t     g_binding () const { return binding; }
         const uint16_t    g_shndx   () const { return shndx; }
 
+        /*
         Elf64Symbol operator = (const Elf64Symbol & rhs) {
             name = rhs.name;
             offset = rhs.offset;
@@ -97,6 +101,7 @@ class Elf64Symbol {
             shndx = rhs.shndx;
             return *this;
         }
+        */
 };
 
 class Elf64Relocation {
@@ -127,7 +132,7 @@ class Elf64 : public Elf {
         const uint64_t      offset; // virtual address offset
         bool                dependency;
 
-        std::list <Elf64Symbol> global_symbols;
+        std::list <Elf64Symbol> symbols;
 
         void load ();
 
@@ -143,6 +148,8 @@ class Elf64 : public Elf {
         std::list <Elf64Symbol> find_symbols_deps (const std::string name);
         const Elf64Symbol       find_symbol_glob  (const std::string name, Elf64 & elf);
 
+        void load_symbols ();
+
         // finds DT_NEEDED entries and loads creates Elf64 instances of them
         // for the dependencies list
         void load_dependencies ();
@@ -156,7 +163,9 @@ class Elf64 : public Elf {
         // Returns true if found and copied, false otherwise
         bool set_tls_memory    (Page * page);
     public :
+        // loads elf and all dependencies
         Elf64  (const std::string filename);
+        // loads just this elf at the given offset, do not load dependencies
         Elf64  (const std::string filename, uint64_t offset);
         ~Elf64 ();
 

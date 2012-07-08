@@ -23,7 +23,7 @@
 #include <stdexcept>
 #include <sstream>
 
-#define DEBUG
+//#define DEBUG
 
 void Memory :: destroy ()
 {

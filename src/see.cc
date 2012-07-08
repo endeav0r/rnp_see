@@ -70,14 +70,12 @@ int main (int argc, char * argv[])
         return -1;
     }
 
-    VM vm(new Lx86(argv[optind]));
+    VM vm;
 
-    /*
     if (loader_type == 1)
         vm = VM(new Lx86(argv[optind]), true);
     else
         vm = VM(Elf::Get(argv[optind]), true);
-    */
 
     vm.debug_x86_registers();
     

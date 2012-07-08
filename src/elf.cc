@@ -162,8 +162,17 @@ void Elf64 :: load ()
 {
     FILE * fh;
 
-    fh = fopen(filename.c_str(), "rb");
-    if (fh == NULL) throw std::runtime_error("could not open file: " + filename);
+    char filename_buf[1024];
+    memset(filename_buf, 0, 1024);
+
+    int link = readlink(filename.c_str(), filename_buf, 1024);
+
+    if (link != -1)
+        fh = fopen(filename_buf, "rb");
+    else
+        fh = fopen(filename.c_str(), "rb");
+    if (fh == NULL)
+        throw std::runtime_error("could not open file: " + filename);
 
     fseek(fh, 0, SEEK_END);
     data_size = ftell(fh);
@@ -174,13 +183,15 @@ void Elf64 :: load ()
     if (bytes_read != data_size)
         throw std::runtime_error("read wrong # bytes in Elf64 :: load");
 
+    if (    (data[EI_MAG0] != ELFMAG0)
+         || (data[EI_MAG1] != ELFMAG1)
+         || (data[EI_MAG2] != ELFMAG2)
+         || (data[EI_MAG3] != ELFMAG3))
+        throw std::runtime_error(filename + " is not a vald Elf64");
+
     fclose(fh);
 
     ehdr = (const Elf64_Ehdr *) this->data;
-
-    if (not dependency) {
-        load_dependencies();
-    }
 }
 
 const std::string Elf64 :: g_strtab_str (size_t strtab_index, size_t offset)
@@ -204,6 +215,7 @@ const Elf64Symbol Elf64 :: g_symbol (size_t symtab_index, size_t symbol_index)
     const std::string name = g_strtab_str(shdr->sh_link, sym->st_name);
 
     return Elf64Symbol(name, sym->st_value, sym->st_value + this->offset,
+                       ELF64_ST_TYPE(sym->st_info),
                        ELF64_ST_BIND(sym->st_info), sym->st_shndx);
 }
 
@@ -257,26 +269,6 @@ std::list <std::string> Elf64 :: g_dependencies()
 }
 
 
-std::list <Elf64Symbol> Elf64 :: g_symbols ()
-{
-    std::list <Elf64Symbol> symbols;
-
-    // find sections with symbols
-    for (int seci = 0; seci < ehdr->e_shnum; seci++) {
-        const Elf64_Shdr * shdr = g_shdr(seci);
-        if (    (shdr->sh_type != SHT_SYMTAB)
-             && (shdr->sh_type != SHT_DYNSYM)) continue;
-
-        // symbol section
-        for (size_t symi = 0; symi < shdr->sh_size / shdr->sh_entsize; symi++) {
-            symbols.push_back(g_symbol(seci, symi));
-        }
-    }
-
-    return symbols;
-}
-
-
 std::list <Elf64Relocation> Elf64 :: g_relocations ()
 {
     std::list <Elf64Relocation> relocations;
@@ -304,7 +296,6 @@ std::list <Elf64Relocation> Elf64 :: g_relocations ()
 
 std::list <Elf64Symbol> Elf64 :: find_symbols (const std::string name)
 {
-    std::list <Elf64Symbol> symbols = g_symbols();
     std::list <Elf64Symbol> result;
     std::list <Elf64Symbol> :: iterator it;
 
@@ -320,7 +311,7 @@ std::list <Elf64Symbol> Elf64 :: find_symbols (const std::string name)
 
 std::list <Elf64Symbol> Elf64 :: find_symbols_deps (const std::string name)
 {
-    std::list <Elf64Symbol> symbols;
+    std::list <Elf64Symbol> result_symbols;
     std::list <Elf64 *> :: iterator dit;
 
     for (dit = dependencies.begin(); dit != dependencies.end(); dit++) {
@@ -328,38 +319,54 @@ std::list <Elf64Symbol> Elf64 :: find_symbols_deps (const std::string name)
         std::list <Elf64Symbol> :: iterator it;
         for (it = dep_symbols.begin(); it != dep_symbols.end(); it++) {
             if ((*it).g_name() == name)
-                symbols.push_back(*it);
+                result_symbols.push_back(*it);
         }
     }
 
-    return symbols;
+    return result_symbols;
 }
 
 
 const Elf64Symbol Elf64 :: find_symbol_glob (const std::string name, Elf64 & elf)
 {
-    std::list <Elf64Symbol> symbols = find_symbols(name);
+    std::list <Elf64Symbol> syms = find_symbols(name);
     std::list <Elf64Symbol> :: iterator it;
 
-    Elf64Symbol best_symbol;
+    std::list <Elf64Symbol> :: iterator best_it;
 
-    for (it = symbols.begin(); it != symbols.end(); it++) {
+    for (it = syms.begin(); it != syms.end(); it++) {
         if (it->g_binding() == STB_LOCAL)
             return *it;
-        best_symbol = *it;
+        best_it = it;
     }
 
-    symbols = elf.find_symbols_deps(name);
-    for (it = symbols.begin(); it != symbols.end(); it++) {
+    syms = elf.find_symbols_deps(name);
+    for (it = syms.begin(); it != syms.end(); it++) {
         if ((it->g_binding() == STB_GLOBAL) && (it->g_shndx() != SHN_UNDEF))
             return *it;
-        best_symbol = *it;
+        best_it = it;
     }
 
-    if (best_symbol.g_name() == name) return best_symbol;
+    if ((*best_it).g_name() == name) return *best_it;
 
     throw std::runtime_error("could not find symbol in find_symbol_glob: " + name);
     return Elf64Symbol();
+}
+
+
+void Elf64 :: load_symbols ()
+{
+    // find sections with symbols
+    for (int seci = 0; seci < ehdr->e_shnum; seci++) {
+        const Elf64_Shdr * shdr = g_shdr(seci);
+        if (    (shdr->sh_type != SHT_SYMTAB)
+             && (shdr->sh_type != SHT_DYNSYM)) continue;
+
+        // symbol section
+        for (size_t symi = 0; symi < shdr->sh_size / shdr->sh_entsize; symi++) {
+            symbols.push_back(g_symbol(seci, symi));
+        }
+    }
 }
 
 
@@ -516,6 +523,8 @@ Elf64 :: Elf64 (const std::string filename)
 
     data = NULL;
     load();
+    load_symbols();
+    load_dependencies();
 }
 
 
@@ -524,6 +533,7 @@ Elf64 :: Elf64 (const std::string filename, uint64_t offset)
 {
     data = NULL;
     load();
+    load_symbols();
 }
 
 
@@ -544,12 +554,12 @@ Elf64 :: ~Elf64 ()
 
 std::string Elf64 :: func_symbol (uint64_t address)
 {
-    std::list <Elf64Symbol> symbols = g_symbols();
     std::list <Elf64Symbol> :: iterator sit;
 
     for (sit = symbols.begin(); sit != symbols.end(); sit++) {
-        if (sit->g_address() == address)
+        if ((sit->g_address() == address) && (sit->g_type() == STT_FUNC)) {
             return sit->g_name();
+        }
     }
 
     std::list <Elf64 *> :: iterator dit;
@@ -696,7 +706,7 @@ std::map <uint64_t, SymbolicValue> Elf64 :: g_variables ()
     
     variables[InstructionOperand::str_to_id("UD_R_FS")]  = SymbolicValue(64, ELF64_FS_INIT);
     variables[InstructionOperand::str_to_id("UD_R_RSP")] = SymbolicValue(64, ELF64_RSP_INIT);
-    variables[InstructionOperand::str_to_id("UD_R_RIP")] = SymbolicValue(64, g_entry());
+    variables[InstructionOperand::str_to_id("UD_R_RIP")] = SymbolicValue(64, ehdr->e_entry);
     return variables;
 }
 

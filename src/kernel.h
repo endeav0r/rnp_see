@@ -47,6 +47,7 @@ class Kernel {
         SYS_FUNC(getpid)
         SYS_FUNC(mmap)
         SYS_FUNC(write)
+        SYS_FUNC(writev)
 };
 
 #endif

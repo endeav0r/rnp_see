@@ -24,7 +24,7 @@
 #include <sstream>
 #include <stdexcept>
 
-#define DEBUG
+//#define DEBUG
 
 Page :: Page (size_t size)
 {

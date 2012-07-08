@@ -33,10 +33,6 @@
 class Translator {
     private :
         std::list <Instruction *> instructions;
-    
-    public :
-        std::string native_asm (uint8_t * data, int size);
-        std::list <Instruction *> translate (uint64_t address, uint8_t * data, size_t size);
         
         int register_bits    (int reg);
         int register_to64    (int reg);
@@ -54,9 +50,11 @@ class Translator {
         void add       (ud_t * ud_obj, uint64_t address);
         void And       (ud_t * ud_obj, uint64_t address);
         void bsf       (ud_t * ud_obj, uint64_t address);
+        void bt        (ud_t * ud_obj, uint64_t address);
         void call      (ud_t * ud_obj, uint64_t address);
         void cdqe      (ud_t * ud_obj, uint64_t address);
         void cmova     (ud_t * ud_obj, uint64_t address);
+        void cmovb     (ud_t * ud_obj, uint64_t address);
         void cmovbe    (ud_t * ud_obj, uint64_t address);
         void cmovnz    (ud_t * ud_obj, uint64_t address);
         void cmovs     (ud_t * ud_obj, uint64_t address);
@@ -73,6 +71,7 @@ class Translator {
         void jb        (ud_t * ud_obj, uint64_t address);
         void jbe       (ud_t * ud_obj, uint64_t address);
         void jg        (ud_t * ud_obj, uint64_t address);
+        void jge       (ud_t * ud_obj, uint64_t address);
         void jl        (ud_t * ud_obj, uint64_t address);
         void jle       (ud_t * ud_obj, uint64_t address);
         void jmp       (ud_t * ud_obj, uint64_t address);
@@ -126,6 +125,10 @@ class Translator {
         void syscall   (ud_t * ud_obj, uint64_t address);
         void test      (ud_t * ud_obj, uint64_t address);
         void Xor       (ud_t * ud_obj, uint64_t address);
+    
+    public :
+        std::string native_asm (uint8_t * data, int size);
+        std::list <Instruction *> translate (uint64_t address, uint8_t * data, size_t size);
 };
 
 #endif

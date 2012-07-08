@@ -14,9 +14,16 @@ all : $(OBJS) $(SRCDIR)/see.o
 %.o : %.cc %.h
 	$(CPP) -c -o $@ $< $(CFLAGS)
 
-tests : $(OBJS)
+test_vm : $(OBJS) src/test/test_vm.cc
+	$(CPP) -o test_vm src/test/test_vm.cc $(OBJS) $(CFLAGS) $(LIBS)
+
+test_memory : $(OBJS) src/test/test_memory.cc
 	$(CPP) -o test_memory src/test/test_memory.cc $(OBJS) $(CFLAGS) $(LIBS)
+
+tests : test_vm test_memory
 
 clean :
 	rm -f $(SRCDIR)/*.o
 	rm -f see
+	rm -f test_vm
+	rm -f test_memory
