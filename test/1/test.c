@@ -16,7 +16,7 @@ int main (int argc, char * argv[])
 {
     char string[32];
     strcpy2(string, "david");
-    printf("hello %s", string);
+    printf("hello %s\n", string);
     return 0;
 }
     
