@@ -109,11 +109,14 @@ class Translator {
         void repne     (ud_t * ud_obj, uint64_t address);
         void ret       (ud_t * ud_obj, uint64_t address);
         void rol       (ud_t * ud_obj, uint64_t address);
+        void ror       (ud_t * ud_obj, uint64_t address);
         void sar       (ud_t * ud_obj, uint64_t address);
         void sbb       (ud_t * ud_obj, uint64_t address);
         void scasb     (ud_t * ud_obj, uint64_t address);
         void seta      (ud_t * ud_obj, uint64_t address);
         void setg      (ud_t * ud_obj, uint64_t address);
+        void setl      (ud_t * ud_obj, uint64_t address);
+        void setle     (ud_t * ud_obj, uint64_t address);
         void setnz     (ud_t * ud_obj, uint64_t address);
         void setz      (ud_t * ud_obj, uint64_t address);
         void shl       (ud_t * ud_obj, uint64_t address);

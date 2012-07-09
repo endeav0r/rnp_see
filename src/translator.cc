@@ -152,11 +152,14 @@ std::list <Instruction *> Translator :: translate (uint64_t address, uint8_t * d
         case UD_Ipxor      : pxor      (&ud_obj, address + ud_insn_off(&ud_obj)); break;
         case UD_Iret       : ret       (&ud_obj, address + ud_insn_off(&ud_obj)); break;
         case UD_Irol       : rol       (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Iror       : ror       (&ud_obj, address + ud_insn_off(&ud_obj)); break;
         case UD_Isar       : sar       (&ud_obj, address + ud_insn_off(&ud_obj)); break;
         case UD_Isbb       : sbb       (&ud_obj, address + ud_insn_off(&ud_obj)); break;
         case UD_Iscasb     : scasb     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
         case UD_Iseta      : seta      (&ud_obj, address + ud_insn_off(&ud_obj)); break;
         case UD_Isetg      : setg      (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Isetl      : setl      (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Isetle     : setle     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
         case UD_Isetnz     : setnz     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
         case UD_Isetz      : setz      (&ud_obj, address + ud_insn_off(&ud_obj)); break;
         case UD_Ishl       : shl       (&ud_obj, address + ud_insn_off(&ud_obj)); break;
@@ -176,8 +179,8 @@ std::list <Instruction *> Translator :: translate (uint64_t address, uint8_t * d
             throw std::runtime_error(ss.str());
         }
 
-        // del with rep prefix
         if (ud_obj.pfx_rep) {
+            std::cout << "pfx_rep" << std::endl;
             if (ud_obj.pfx_rep == UD_Irep) {
                 switch (ud_obj.mnemonic) {
                 case UD_Istosd :
@@ -188,8 +191,9 @@ std::list <Instruction *> Translator :: translate (uint64_t address, uint8_t * d
                 }
             }
             else if (ud_obj.pfx_rep == UD_Irepne) {
+                std::cout << "repne" << std::endl;
                 switch (ud_obj.mnemonic) {
-                    case UD_Iscasb : rep(&ud_obj, address + ud_insn_off(&ud_obj)); break;
+                    case UD_Iscasb : repne(&ud_obj, address + ud_insn_off(&ud_obj)); break;
                 default :
                     throw std::runtime_error("unhandled repne prefix");
                 }
@@ -305,13 +309,15 @@ void Translator :: operand_set (ud_t * ud_obj, int operand_i, uint64_t address, 
             return;
         }
 
-        // setting an AL type register sets only the lower bits
-        if (register_bits(ud_obj->operand[operand_i].base) == 8) {
+        // setting an AL/AX type register sets only the lower bits
+        if (    (register_bits(ud_obj->operand[operand_i].base) == 8)
+             || (register_bits(ud_obj->operand[operand_i].base) == 16)) {
             // this should handle registers larger than 64 bits appropriately
-            int base = register_to64(ud_obj->operand[operand_i].base);
+            int value_bits = value.g_bits() < 8 ? 8 : value.g_bits();
+            int base       = register_to64(ud_obj->operand[operand_i].base);
             InstructionOperand dst (OPTYPE_VAR, register_bits(base), ud_type_DEBUG[base]);
             InstructionOperand one  (OPTYPE_CONSTANT, dst.g_bits(), 1);
-            InstructionOperand bits (OPTYPE_CONSTANT, 64, value.g_bits());
+            InstructionOperand bits (OPTYPE_CONSTANT, 64, value_bits);
             InstructionOperand mask (OPTYPE_VAR, register_bits(base));
             InstructionOperand tmp  (OPTYPE_VAR, dst.g_bits());
             instructions.push_back(new InstructionShl(address, size, mask, one, bits));
@@ -723,15 +729,17 @@ void Translator :: cmova (ud_t * ud_obj, uint64_t address)
 {
     size_t size = ud_insn_len(ud_obj);
 
-    InstructionOperand ZF        (OPTYPE_VAR, 1, "ZF");
-    InstructionOperand CF        (OPTYPE_VAR, 1, "CF");
-    InstructionOperand CFandZF    (OPTYPE_VAR, 1);
-    InstructionOperand notCFandZF (OPTYPE_VAR, 1);
+    InstructionOperand ZF         (OPTYPE_VAR, 1, "ZF");
+    InstructionOperand notZF      (OPTYPE_VAR, 1);
+    InstructionOperand CF         (OPTYPE_VAR, 1, "CF");
+    InstructionOperand notCF      (OPTYPE_VAR, 1);
+    InstructionOperand notCFandnotZF (OPTYPE_VAR, 1);
 
-    instructions.push_back(new InstructionAnd(address, size, CFandZF, CF, ZF));
-    instructions.push_back(new InstructionNot(address, size, notCFandZF, CFandZF));
+    instructions.push_back(new InstructionNot(address, size, notZF, ZF));
+    instructions.push_back(new InstructionNot(address, size, notCF, CF));
+    instructions.push_back(new InstructionAnd(address, size, notCFandnotZF, notZF, notCF));
 
-    cmovcc(ud_obj, address, notCFandZF);
+    cmovcc(ud_obj, address, notCFandnotZF);
 }
 
 
@@ -940,9 +948,9 @@ void Translator :: imul (ud_t * ud_obj, uint64_t address)
     }
     else if ((ud_obj->operand[1].type != UD_NONE) && (ud_obj->operand[2].type == UD_NONE)) {
         // dst must be register
-        InstructionOperand dst  = operand_get(ud_obj, 0, address);
-        InstructionOperand srca = operand_get(ud_obj, 0, address);
-        InstructionOperand srcb = operand_get(ud_obj, 1, address);
+        dst  = operand_get(ud_obj, 0, address);
+        srca = operand_get(ud_obj, 0, address);
+        srcb = operand_get(ud_obj, 1, address);
     }
     else {
         std::cerr << ins_debug_str(ud_obj) << std::endl;
@@ -1195,14 +1203,15 @@ void Translator :: mov (ud_t * ud_obj, uint64_t address)
     InstructionOperand src = operand_get(ud_obj, 1, address);
 
     // god help us all
-    if ((ud_obj->pfx_rex) && (ud_insn_ptr(ud_obj)[1] == 0xb8) && false) {
-        InstructionOperand sext (OPTYPE_VAR, 64);
-        int dst64 = register_to64(ud_obj->operand[0].base);
-        InstructionOperand dst  (OPTYPE_VAR, 64, ud_type_DEBUG[dst64]);
-        instructions.push_back(new InstructionSignExtend(address, size, sext, src));
-        instructions.push_back(new InstructionAssign(address, size, dst, sext));
+    if (ud_obj->pfx_rex) {
+        if (ud_insn_ptr(ud_obj)[1] == 0xc7) {
+            InstructionOperand sext (OPTYPE_VAR, 64);
+            instructions.push_back(new InstructionSignExtend(address, size, sext, src));
+            operand_set(ud_obj, 0, address, sext);
+            return;
+        }
     }
-    else
+    //else
         operand_set(ud_obj, 0, address, src);
 }
 
@@ -1329,17 +1338,12 @@ void Translator :: movqa (ud_t * ud_obj, uint64_t address)
 }
 
 
-// dst must be register
+// dst must be register, zero extend
 void Translator :: movzx (ud_t * ud_obj, uint64_t address)
 {
-    // conduct the move first
-    mov(ud_obj, address);
+    InstructionOperand src = operand_get(ud_obj, 1, address);
  
-    InstructionOperand dst = operand(ud_obj, 0, address);
-    InstructionOperand toand(OPTYPE_CONSTANT, 8, 0xff);
-    
-    // x86 will put the byte in the lowest octet of the register, so AND it with 0xff
-    instructions.push_back(new InstructionAnd(address, ud_insn_len(ud_obj), dst, dst, toand));
+    operand_set(ud_obj, 0, address, src);
 }
 
 
@@ -1740,14 +1744,16 @@ void Translator :: repne (ud_t * ud_obj, uint64_t address)
     InstructionOperand one (OPTYPE_CONSTANT, 64, 1);
     instructions.push_back(new InstructionSub(address, size, rcx, rcx, one));
 
-    // if rcx != 0 AND ZF==1, jmp negative this instruction size
+    // if rcx != 0 AND ZF==0, jmp negative this instruction size
     // calculate condition
-    InstructionOperand ZF   (OPTYPE_VAR, 1, "ZF");
-    InstructionOperand zero (OPTYPE_CONSTANT, 64, 0);
-    InstructionOperand cond (OPTYPE_VAR, 1);
+    InstructionOperand ZF    (OPTYPE_VAR, 1, "ZF");
+    InstructionOperand notZF (OPTYPE_VAR, 1);
+    InstructionOperand zero  (OPTYPE_CONSTANT, 64, 0);
+    InstructionOperand cond  (OPTYPE_VAR, 1);
     instructions.push_back(new InstructionCmpEq(address, size, cond, rcx, zero));
-    instructions.push_back(new InstructionAnd(address, size, cond, cond, ZF));
     instructions.push_back(new InstructionNot(address, size, cond, cond));
+    instructions.push_back(new InstructionNot(address, size, notZF, ZF));
+    instructions.push_back(new InstructionAnd(address, size, cond, cond, notZF));
     // find rip - instruction_size
     InstructionOperand rip     (OPTYPE_VAR, 64, "UD_R_RIP");
     InstructionOperand jmpDst  (OPTYPE_VAR, 64);
@@ -1804,6 +1810,38 @@ void Translator :: rol (ud_t * ud_obj, uint64_t address)
 }
 
 
+void Translator :: ror (ud_t * ud_obj, uint64_t address)
+{
+    size_t size = ud_insn_len(ud_obj);
+
+    InstructionOperand src   = operand_get(ud_obj, 0, address);
+    InstructionOperand count = operand_get(ud_obj, 1, address);
+    InstructionOperand countl  (OPTYPE_VAR, 8);
+    InstructionOperand tmpr    (OPTYPE_VAR, src.g_bits());
+    InstructionOperand tmpl    (OPTYPE_VAR, src.g_bits());
+    InstructionOperand tmp     (OPTYPE_VAR, src.g_bits());
+    InstructionOperand U64     (OPTYPE_CONSTANT, 8, 64);
+
+    instructions.push_back(new InstructionShr(address, size, tmpr,   src,  count));
+    instructions.push_back(new InstructionSub(address, size, countl, U64,  count));
+    instructions.push_back(new InstructionShl(address, size, tmpl,   src,  countl));
+    instructions.push_back(new InstructionOr (address, size, tmp,    tmpr, tmpl));
+
+    // is the MSB of the result
+    InstructionOperand CF       (OPTYPE_VAR, 1, "CF");
+    InstructionOperand CFShift  (OPTYPE_CONSTANT, 8, src.g_bits() - 1);
+    instructions.push_back(new InstructionShr(address, size, CF, tmp, CFShift));
+
+    // XOR of two most significant bits
+    InstructionOperand OF       (OPTYPE_VAR, 1, "OF");
+    InstructionOperand OFShift (OPTYPE_CONSTANT, 8, src.g_bits() - 2);
+    instructions.push_back(new InstructionShr(address, size, OF, tmp, OFShift));
+    instructions.push_back(new InstructionXor(address, size, OF, OF, CF));
+
+    operand_set(ud_obj, 0, address, tmp);
+}
+
+
 void Translator :: sar (ud_t * ud_obj, uint64_t address)
 {
     int size = ud_insn_len(ud_obj);
@@ -1831,12 +1869,27 @@ void Translator :: sar (ud_t * ud_obj, uint64_t address)
     
     InstructionOperand dst        = operand_get(ud_obj, 0, address);
     InstructionOperand tmp          (OPTYPE_VAR, dst.g_bits());
-    //InstructionOperand signPreserve (OPTYPE_CONSTANT, dst.g_bits(), (1 << dst.g_bits()) - 1);
     InstructionOperand one          (OPTYPE_CONSTANT, dst.g_bits(), 1);
     InstructionOperand zero         (OPTYPE_CONSTANT, dst.g_bits(), 0);
     
     instructions.push_back(new InstructionShr(address, size, tmp, dst, bits));
-    //instructions.push_back(new InstructionAnd(address, size, tmp, signPreserve, dst));
+
+    // to calculate the sign, we isolate the sign bit, use it to set or zero
+    // a variable of all 1s, shift that variable left (64 - bits), and or it
+    // with the result (assuming 64-bit operand)
+    InstructionOperand signBit  (OPTYPE_VAR, 1);
+    InstructionOperand sixThree (OPTYPE_CONSTANT, 8, dst.g_bits() - 1);
+    InstructionOperand all1s    (OPTYPE_CONSTANT, dst.g_bits(), 0xffffffffffffffffULL);
+    InstructionOperand signMask (OPTYPE_VAR, dst.g_bits());
+    InstructionOperand sixFour  (OPTYPE_CONSTANT, 8, dst.g_bits());
+    InstructionOperand signShift (OPTYPE_VAR, 8);
+
+    instructions.push_back(new InstructionShr(address, size, signBit, dst, sixThree));
+    instructions.push_back(new InstructionMul(address, size, signMask, all1s, signBit));
+    instructions.push_back(new InstructionSub(address, size, signShift, sixFour, bits));
+    instructions.push_back(new InstructionShl(address, size, signMask, signMask, signShift));
+    instructions.push_back(new InstructionOr(address, size, tmp, tmp, signMask));
+
     
     // CF takes last bit shifted out of dst
     InstructionOperand CF           (OPTYPE_VAR, 1, "CF");
@@ -1856,7 +1909,7 @@ void Translator :: sar (ud_t * ud_obj, uint64_t address)
     
     InstructionOperand ZF (OPTYPE_VAR, 1, "ZF");
     instructions.push_back(new InstructionCmpEq(address, size, ZF, tmp, zero));
-    
+
     operand_set(ud_obj, 0, address, tmp);
 }
 
@@ -1933,6 +1986,10 @@ void Translator :: scasb (ud_t * ud_obj, uint64_t address)
     instructions.push_back(new InstructionMul(address, size, addTmp, neg2, DF));
     instructions.push_back(new InstructionAdd(address, size, add, add, addTmp));
     instructions.push_back(new InstructionAdd(address, size, rdi, rdi, add));
+
+    // suck it udis86 (doesn't correctly ret prefix for this instruction)
+    if ((ud_insn_ptr(ud_obj)[0] == 0xf2) && (ud_obj->pfx_rep == 0))
+        repne(ud_obj, address);
 }
 
 
@@ -1968,6 +2025,41 @@ void Translator :: setg (ud_t * ud_obj, uint64_t address)
     instructions.push_back(new InstructionAnd(address, size, notZFandSFeqOF, notZF, SFeqOF));
 
     operand_set(ud_obj, 0, address, notZFandSFeqOF);
+}
+
+
+void Translator :: setl (ud_t * ud_obj, uint64_t address)
+{
+    size_t size = ud_insn_len(ud_obj);
+
+    InstructionOperand SF (OPTYPE_VAR, 1, "SF");
+    InstructionOperand OF (OPTYPE_VAR, 1, "OF");
+    InstructionOperand SFeqOF (OPTYPE_VAR, 1);
+    InstructionOperand notSFeqOF (OPTYPE_VAR, 1);
+
+    instructions.push_back(new InstructionCmpEq(address, size, SFeqOF, SF, OF));
+    instructions.push_back(new InstructionNot(address, size, notSFeqOF, SFeqOF));
+
+    operand_set(ud_obj, 0, address, notSFeqOF);
+}
+
+
+void Translator :: setle (ud_t * ud_obj, uint64_t address)
+{
+    size_t size = ud_insn_len(ud_obj);
+
+    InstructionOperand ZF (OPTYPE_VAR, 1, "ZF");
+    InstructionOperand SF (OPTYPE_VAR, 1, "SF");
+    InstructionOperand OF (OPTYPE_VAR, 1, "OF");
+    InstructionOperand SFeqOF        (OPTYPE_VAR, 1);
+    InstructionOperand notSFeqOF     (OPTYPE_VAR, 1);
+    InstructionOperand ZFornotSFeqOF (OPTYPE_VAR, 1);
+
+    instructions.push_back(new InstructionCmpEq(address, size, SFeqOF, SF, OF));
+    instructions.push_back(new InstructionNot(address, size, notSFeqOF, SFeqOF));
+    instructions.push_back(new InstructionOr(address, size, ZFornotSFeqOF, ZF, notSFeqOF));
+
+    operand_set(ud_obj, 0, address, ZFornotSFeqOF);
 }
 
 

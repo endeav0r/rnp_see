@@ -231,8 +231,9 @@ void Lx86 :: step ()
     int status;
     while (true) {
         waitpid(pid, &status, 0);
-        if (WIFSTOPPED(status))
+        if ((WIFSTOPPED(status)) && (WSTOPSIG(status) == SIGTRAP)) {
             break;
+        }
     }
 }
 

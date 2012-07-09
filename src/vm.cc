@@ -146,9 +146,12 @@ void VM :: step ()
     std::list <Instruction *> instructions;
 
     // if there is a symbol name for this location, print it out
+    // this code is very slow
+    /*
     std::string symbol_name = loader->func_symbol(variables[ip_id].g_uint64());
     if (symbol_name != "")
         std::cout << "SYMBOL: " << symbol_name << " :" << std::endl;
+    */
 
     instructions = translator.translate(ip_addr,
                                         memory.g_data(ip_addr),
@@ -170,7 +173,7 @@ void VM :: step ()
 
     std::list <Instruction *> :: iterator it;
     for (it = instructions.begin(); it != instructions.end(); it++) {
-        std::cout << (*it)->str() << std::endl;
+        //std::cout << (*it)->str() << std::endl;
              EXECUTE(InstructionAdd)
         else EXECUTE(InstructionAnd)
         else EXECUTE(InstructionAssign)

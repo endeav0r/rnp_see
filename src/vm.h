@@ -78,6 +78,7 @@ class VM {
 
         SymbolicValue g_variable (uint64_t identifier);
 
+        // special functions for debugging
         void debug_x86_registers ();
         void debug_variables     ();
 };

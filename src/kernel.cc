@@ -108,6 +108,10 @@ void Kernel :: sys_fstat (std::map <uint64_t, SymbolicValue> & variables, Memory
               << "result_rax=" << variables[InstructionOperand::str_to_id("UD_R_RAX")].str()
               << std::endl;
     #endif
+
+    // some registers are not callee saved, and this call will trash it.
+    variables[InstructionOperand::str_to_id("UD_R_RCX")] = SymbolicValue(64, -1);
+    variables[InstructionOperand::str_to_id("UD_R_R11")] = SymbolicValue(64, 0x346);
 }
 
 
@@ -169,6 +173,9 @@ void Kernel :: sys_mmap (std::map <uint64_t, SymbolicValue> & variables, Memory 
               << std::endl;
     #endif
 
+    // some registers are not callee saved, and this call will trash it.
+    variables[InstructionOperand::str_to_id("UD_R_RCX")] = SymbolicValue(64, -1);
+
     // increase next_mmap
     next_mmap += (mmap_size + 4095) % 4096;
 }
@@ -205,6 +212,13 @@ void Kernel :: sys_write (std::map <uint64_t, SymbolicValue> & variables, Memory
     const uint8_t * data = memory.g_data(rsi.g_uint64());
     size_t written = fwrite(data, 1, rdx.g_uint64(), fh);
 
+    if (written != rdx.g_uint64()) {
+        std::stringstream ss;
+        ss << "wrote " << written << " bytes, should have written "
+           << rdx.g_uint64() << " bytes.";
+        throw std::runtime_error(ss.str());
+    }
+
     fclose(fh);
 
     variables[InstructionOperand::str_to_id("UD_R_RAX")] = SymbolicValue(64, written);
@@ -216,6 +230,9 @@ void Kernel :: sys_write (std::map <uint64_t, SymbolicValue> & variables, Memory
               << "result_rax=" << variables[InstructionOperand::str_to_id("UD_R_RAX")].str()
               << std::endl;
     #endif
+
+    // some registers are not callee saved, and this call will trash it.
+    variables[InstructionOperand::str_to_id("UD_R_RCX")] = SymbolicValue(64, -1);
 }
 
 
