@@ -98,7 +98,7 @@ std::map <uint64_t, Page *> Elf :: fix_pages (std::multimap <uint64_t, Page *> p
     for (fpit = final_pages.begin(); fpit != final_pages.end(); fpit++) {
         if (fpit->second->g_size() == 0) {
             fpit->second->destroy();
-            fpit = final_pages.erase(fpit);
+            final_pages.erase(fpit);
         }
     }
 
