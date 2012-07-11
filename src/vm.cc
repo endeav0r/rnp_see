@@ -283,21 +283,13 @@ void VM :: execute (InstructionLoad * load)
 
     switch (load->g_bits()) {
     case 8 :
-        variables[dst.g_id()] = SymbolicValue(dst.g_bits(),
-                                              memory.g_byte(src.g_uint64())).extend(dst.g_bits());
-        break;
+        variables[dst.g_id()] = memory.g_sym8(src.g_uint64()); break;
     case 16 :
-        variables[dst.g_id()] = SymbolicValue(dst.g_bits(),
-                                              memory.g_word(src.g_uint64())).extend(dst.g_bits());
-        break;
+        variables[dst.g_id()] = memory.g_sym16(src.g_uint64()); break;
     case 32 :
-        variables[dst.g_id()] = SymbolicValue(dst.g_bits(),
-                                              memory.g_dword(src.g_uint64())).extend(dst.g_bits());
-        break;
+        variables[dst.g_id()] = memory.g_sym32(src.g_uint64()); break;
     case 64 :
-        variables[dst.g_id()] = SymbolicValue(dst.g_bits(),
-                                              memory.g_qword(src.g_uint64())).extend(dst.g_bits());
-        break;
+        variables[dst.g_id()] = memory.g_sym64(src.g_uint64()); break;
     default :
         std::stringstream ss;
         ss << "Tried to load invalid bit size: " << load->g_bits();
@@ -373,10 +365,10 @@ void VM :: execute (InstructionStore * store)
     #endif
 
     switch (store->g_bits()) {
-    case 8  : memory.s_byte(dst.g_uint64(), src.g_uint64()); break;
+    case 8  : memory.s_sym8(dst.g_uint64(), src); break;
     case 16 : memory.s_word(dst.g_uint64(), src.g_uint64()); break;
-    case 32 : memory.s_dword(dst.g_uint64(), src.g_uint64()); break;
-    case 64 : memory.s_qword(dst.g_uint64(), src.g_uint64()); break;
+    case 32 : memory.s_sym32(dst.g_uint64(), src); break;
+    case 64 : memory.s_sym64(dst.g_uint64(), src); break;
     default :
         std::stringstream ss;
         ss << "Tried to store invalid bit size: " << store->g_bits();

@@ -106,6 +106,57 @@ void Memory :: s_data (uint64_t address, const uint8_t * data, size_t size)
 }
 
 
+SymbolicValue Memory :: g_sym8 (uint64_t address)
+{
+    if (symbolic_memory.count(address) > 0)
+        return symbolic_memory[address];
+    return SymbolicValue(8, g_byte(address));
+}
+
+SymbolicValue Memory :: g_sym16 (uint64_t address)
+{
+    return (g_sym8(address + 1).extend(16) << SymbolicValue(8, 8))
+           | g_sym8(address).extend(16);
+}
+
+SymbolicValue Memory :: g_sym32 (uint64_t address)
+{
+    return (g_sym16(address + 2).extend(32) << SymbolicValue(8, 16))
+           | g_sym16(address).extend(32);
+}
+
+SymbolicValue Memory :: g_sym64 (uint64_t address)
+{
+    return (g_sym32(address + 4).extend(64) << SymbolicValue(8, 32))
+           | g_sym32(address).extend(64);
+}
+
+void Memory :: s_sym8 (uint64_t address, SymbolicValue value)
+{
+    if (value.g_wild())
+        symbolic_memory[address] = value & SymbolicValue(8, 0xff);
+    else
+        s_byte(address, value.g_uint64() & 0xff);
+}
+
+void Memory :: s_sym16 (uint64_t address, SymbolicValue value)
+{
+    s_sym8(address + 1, value >> SymbolicValue(8, 8));
+    s_sym8(address, value);
+}
+
+void Memory :: s_sym32 (uint64_t address, SymbolicValue value)
+{
+    s_sym16(address + 2, value >> SymbolicValue(8, 16));
+    s_sym16(address, value);
+}
+
+void Memory :: s_sym64 (uint64_t address, SymbolicValue value)
+{
+    s_sym32(address + 4, value >> SymbolicValue(8, 32));
+    s_sym32(address, value);
+}
+
 void Memory :: s_page (uint64_t address, Page * page)
 {
     this->pages[address] = page;

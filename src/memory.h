@@ -29,6 +29,7 @@
 #include <string>
 
 #include "page.h"
+#include "symbolicvalue.h"
 
 class Memory {
     private :
@@ -38,6 +39,8 @@ class Memory {
         std::map <uint64_t, int> dirty_counter;
         std::unordered_set <uint64_t> dirty;
         std::map <uint64_t, Page *> pages;
+
+        std::map <uint64_t, SymbolicValue> symbolic_memory;
 
         uint64_t g_page_address (uint64_t address, int bits);
         void     dirty_page     (uint64_t address);
@@ -55,6 +58,16 @@ class Memory {
         uint8_t * g_data      (uint64_t address);
         void      s_data      (uint64_t address, const uint8_t * data, size_t size);
         void      s_page      (uint64_t address, Page * page);
+
+        SymbolicValue g_sym8  (uint64_t address);
+        SymbolicValue g_sym16 (uint64_t address);
+        SymbolicValue g_sym32 (uint64_t address);
+        SymbolicValue g_sym64 (uint64_t address);
+
+        void s_sym8  (uint64_t address, SymbolicValue value);
+        void s_sym16 (uint64_t address, SymbolicValue value);
+        void s_sym32 (uint64_t address, SymbolicValue value);
+        void s_sym64 (uint64_t address, SymbolicValue value);
         
         uint8_t  g_byte  (uint64_t address);
         uint16_t g_word  (uint64_t address);
