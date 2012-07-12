@@ -38,7 +38,7 @@ Page :: Page (size_t size)
 Page :: Page (size_t size, uint8_t * data)
 {
     this->size = size;
-    this->data = new uint8_t [size] ;
+    this->data = new uint8_t [size];
     memcpy(this->data, data, size);
     this->parent = NULL;
 }

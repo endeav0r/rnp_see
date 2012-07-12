@@ -43,9 +43,10 @@ Lx86 :: Lx86 (std::string filename)
 
     int status;
     while (true) {
-        wait(&status);
-        if (WIFSTOPPED(status))
+        waitpid(pid, &status, 0);
+        if ((WIFSTOPPED(status)) && (WSTOPSIG(status) == SIGTRAP)) {
             break;
+        }
     }
 
     // set a breakpoint at the entry point
@@ -57,9 +58,10 @@ Lx86 :: Lx86 (std::string filename)
     ptrace(PTRACE_CONT, pid, NULL, NULL);
 
     while (true) {
-        wait(&status);
-        if (WIFSTOPPED(status))
+        waitpid(pid, &status, 0);
+        if ((WIFSTOPPED(status)) && (WSTOPSIG(status) == SIGTRAP)) {
             break;
+        }
     }
 
     // restore memory at breakpoint
@@ -150,12 +152,14 @@ Memory Lx86 :: g_memory ()
             continue;
 
         uint8_t * buf = new uint8_t[end - start];
-        
+
         // read those bytes!
         if (lseek64(mem_fd, start, SEEK_SET) != start) {
             throw std::runtime_error("error on Lx86::g_memory lseek64");
         }
         off64_t bytes_read = read(mem_fd, buf, end - start);
+
+        std::cout << std::hex << start << " " << (int) buf[0x480] << std::endl;
 
         if (bytes_read != end - start) {
             throw std::runtime_error("error on Lx86::g_memory read");

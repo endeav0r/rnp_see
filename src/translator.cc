@@ -160,6 +160,7 @@ std::list <Instruction *> Translator :: translate (uint64_t address, uint8_t * d
         case UD_Isetg      : setg      (&ud_obj, address + ud_insn_off(&ud_obj)); break;
         case UD_Isetl      : setl      (&ud_obj, address + ud_insn_off(&ud_obj)); break;
         case UD_Isetle     : setle     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
+        case UD_Isetnb     : setnb     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
         case UD_Isetnz     : setnz     (&ud_obj, address + ud_insn_off(&ud_obj)); break;
         case UD_Isetz      : setz      (&ud_obj, address + ud_insn_off(&ud_obj)); break;
         case UD_Ishl       : shl       (&ud_obj, address + ud_insn_off(&ud_obj)); break;
@@ -2060,6 +2061,17 @@ void Translator :: setle (ud_t * ud_obj, uint64_t address)
     instructions.push_back(new InstructionOr(address, size, ZFornotSFeqOF, ZF, notSFeqOF));
 
     operand_set(ud_obj, 0, address, ZFornotSFeqOF);
+}
+
+
+void Translator :: setnb (ud_t * ud_obj, uint64_t address)
+{
+    InstructionOperand CF    (OPTYPE_VAR, 1, "CF");
+    InstructionOperand notCF (OPTYPE_VAR, 1);
+
+    instructions.push_back(new InstructionNot(address, ud_insn_len(ud_obj), notCF, CF));
+
+    operand_set(ud_obj, 0, address, notCF);
 }
 
 

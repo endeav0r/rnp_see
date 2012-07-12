@@ -95,6 +95,7 @@ int main (int argc, char * argv[])
         uint64_t vm_rip = vm.g_variable(InstructionOperand::str_to_id("UD_R_RIP")).g_uint64();
 
         if (vm_rip != regs.rip) {
+            step++;
             vm.step();
             vm_rip = vm.g_variable(InstructionOperand::str_to_id("UD_R_RIP")).g_uint64();
         }

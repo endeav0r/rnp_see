@@ -117,6 +117,7 @@ class Translator {
         void setg      (ud_t * ud_obj, uint64_t address);
         void setl      (ud_t * ud_obj, uint64_t address);
         void setle     (ud_t * ud_obj, uint64_t address);
+        void setnb     (ud_t * ud_obj, uint64_t address);
         void setnz     (ud_t * ud_obj, uint64_t address);
         void setz      (ud_t * ud_obj, uint64_t address);
         void shl       (ud_t * ud_obj, uint64_t address);

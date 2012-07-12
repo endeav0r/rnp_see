@@ -209,19 +209,15 @@ void Kernel :: sys_write (std::map <uint64_t, SymbolicValue> & variables, Memory
         throw std::runtime_error(ss.str());
     }
 
-    const uint8_t * data = memory.g_data(rsi.g_uint64());
-    size_t written = fwrite(data, 1, rdx.g_uint64(), fh);
-
-    if (written != rdx.g_uint64()) {
-        std::stringstream ss;
-        ss << "wrote " << written << " bytes, should have written "
-           << rdx.g_uint64() << " bytes.";
-        throw std::runtime_error(ss.str());
+    std::stringstream output;
+    for (uint64_t i = 0; i < rdx.g_uint64(); i++) {
+        output << memory.g_sym8(rsi.g_uint64() + i).str();
     }
+    fwrite(output.str().c_str(), 1, output.str().size(), fh);
 
     fclose(fh);
 
-    variables[InstructionOperand::str_to_id("UD_R_RAX")] = SymbolicValue(64, written);
+    variables[InstructionOperand::str_to_id("UD_R_RAX")] = SymbolicValue(64, rdx.g_uint64());
 
     #ifdef DEBUG
     std::cerr << "SYS_WRITE rdi=" << rdi.str() << ", "
