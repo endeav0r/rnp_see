@@ -27,88 +27,108 @@
 
 #include "uint.h"
 
+enum {
+    SVT_NONE,
+    SVT_CONSTANT,
+    SVT_ADD,
+    SVT_AND,
+    SVT_CMPLES,
+    SVT_CMPLEU,
+    SVT_CMPLTS,
+    SVT_CMPLTU,
+    SVT_DIV,
+    SVT_EQ,
+    SVT_MOD,
+    SVT_MUL,
+    SVT_NOT,
+    SVT_OR,
+    SVT_SEXT,
+    SVT_SHL,
+    SVT_SHR,
+    SVT_SUB,
+    SVT_XOR
+};
+
+namespace z3 { class expr; class context; }
+
+class SymbolicValueSSA {
+    public :
+        static SymbolicValueSSA & get ()
+        {
+            static SymbolicValueSSA instance;
+            return instance;
+        }
+        uint64_t next() { return next_id++; }
+    private :
+        uint64_t next_id;
+        SymbolicValueSSA () : next_id(0) {}
+        SymbolicValueSSA (SymbolicValueSSA &);
+        void operator = (SymbolicValueSSA &);
+};
+
 class SymbolicValue {
     protected :
-        UInt value;
-        bool wild; // all values possible
+        int type;
+        uint64_t ssa;
+        UInt     value;
+        bool     wild; // all values possible
+        SymbolicValue * lhs;
+        SymbolicValue * rhs;
+
+        std::string z3_name () const;
     
     public :
         SymbolicValue ();
         SymbolicValue (int bits, uint64_t value64);
         SymbolicValue (int bits);
-        SymbolicValue (UInt value);
+        SymbolicValue (const UInt & value);
+        SymbolicValue (int type,
+                       const SymbolicValue & lhs,
+                       const SymbolicValue & rhs);
+        ~SymbolicValue ();
+
+        SymbolicValue & operator = (const SymbolicValue & rhs);
+        SymbolicValue & operator = (SymbolicValue & rhs);
+        SymbolicValue & operator = (const SymbolicValue & rhs) const;
+        SymbolicValue & operator = (SymbolicValue & rhs) const;
         
         virtual const std::string str () const;
 
-        const SymbolicValue extend (int bits) const;
+        const SymbolicValue extend      (int bits) const;
+        const SymbolicValue signExtend  (int bits) const;
         
         UInt     g_value  () const { return value;             }
         uint64_t g_uint64 () const { return value.g_value64(); }
         int      g_bits   () const { return value.g_bits();    }
         bool     g_wild   () const { return wild;              }
 
-        const SymbolicValue operator +  (const SymbolicValue & rhs) const;
-        const SymbolicValue operator -  (const SymbolicValue & rhs) const;
-        const SymbolicValue operator *  (const SymbolicValue & rhs) const;
-        const SymbolicValue operator /  (const SymbolicValue & rhs) const;
-        const SymbolicValue operator %  (const SymbolicValue & rhs) const;
-        const SymbolicValue operator &  (const SymbolicValue & rhs) const;
-        const SymbolicValue operator |  (const SymbolicValue & rhs) const;
-        const SymbolicValue operator ^  (const SymbolicValue & rhs) const;
-        const SymbolicValue operator == (const SymbolicValue & rhs) const;
-        const SymbolicValue operator != (const SymbolicValue & rhs) const;
-        const SymbolicValue operator >> (const SymbolicValue & rhs) const;
-        const SymbolicValue operator << (const SymbolicValue & rhs) const;
-        const SymbolicValue operator ~  () const;
+        SymbolicValue operator +  (const SymbolicValue & rhs) const;
+        SymbolicValue operator -  (const SymbolicValue & rhs) const;
+        SymbolicValue operator *  (const SymbolicValue & rhs) const;
+        SymbolicValue operator /  (const SymbolicValue & rhs) const;
+        SymbolicValue operator %  (const SymbolicValue & rhs) const;
+        SymbolicValue operator &  (const SymbolicValue & rhs) const;
+        SymbolicValue operator |  (const SymbolicValue & rhs) const;
+        SymbolicValue operator ^  (const SymbolicValue & rhs) const;
+        SymbolicValue operator >> (const SymbolicValue & rhs) const;
+        SymbolicValue operator << (const SymbolicValue & rhs) const;
+        SymbolicValue operator == (const SymbolicValue & rhs) const;
 
-        const SymbolicValue cmpLes      (const SymbolicValue & rhs) const;
-        const SymbolicValue cmpLeu      (const SymbolicValue & rhs) const;
-        const SymbolicValue cmpLts      (const SymbolicValue & rhs) const;
-        const SymbolicValue cmpLtu      (const SymbolicValue & rhs) const;
+        SymbolicValue cmpLes      (const SymbolicValue & rhs) const;
+        SymbolicValue cmpLeu      (const SymbolicValue & rhs) const;
+        SymbolicValue cmpLts      (const SymbolicValue & rhs) const;
+        SymbolicValue cmpLtu      (const SymbolicValue & rhs) const;
 
-        const SymbolicValue signExtend  (int bits) const;
+        SymbolicValue operator ~  () const;
+
+        // creates a z3 expression which evaluates this SymbolicValue in the
+        // given z3 context
+        virtual z3::expr context    (z3::context & c) const;
+        virtual z3::expr contextCmp (z3::context & c, z3::expr && cond) const;
+
+        // asserts a wild symbolic value can equal the given value
+        virtual bool svassert (const SymbolicValue & value);
 };
 
-class SymbolicValueNot : public SymbolicValue {
-    protected :
-        const SymbolicValue src;
-    public :
-        SymbolicValueNot (const SymbolicValue & src) : src(src) { wild = true; }
-        const std::string str () const;
-};
-
-class SymbolicValueBinOp : public SymbolicValue {
-    protected :
-        const SymbolicValue lhs;
-        const SymbolicValue rhs;
-    public :
-        SymbolicValueBinOp (const SymbolicValue & lhs, const SymbolicValue & rhs)
-         : lhs(lhs), rhs(rhs) { wild = true; }
-};
-
-#define SVBINOPCLASS(OPERATION) \
-class SymbolicValue##OPERATION : public SymbolicValueBinOp { \
-    public :                                                 \
-        SymbolicValue##OPERATION (const SymbolicValue & lhs, const SymbolicValue & rhs) \
-            : SymbolicValueBinOp(lhs, rhs) { wild = true;} \
-        const std::string str () const; \
-};
-
-
-SVBINOPCLASS(Add)
-SVBINOPCLASS(And)
-SVBINOPCLASS(CmpLes)
-SVBINOPCLASS(CmpLeu)
-SVBINOPCLASS(CmpLts)
-SVBINOPCLASS(CmpLtu)
-SVBINOPCLASS(Div)
-SVBINOPCLASS(Eq)
-SVBINOPCLASS(Mod)
-SVBINOPCLASS(Mul)
-SVBINOPCLASS(Or)
-SVBINOPCLASS(Sub)
-SVBINOPCLASS(Xor)
-SVBINOPCLASS(Shl)
-SVBINOPCLASS(Shr)
 
 #endif

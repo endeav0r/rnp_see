@@ -292,11 +292,14 @@ void Translator :: operand_set (ud_t * ud_obj, int operand_i, uint64_t address, 
         switch (ud_obj->operand[operand_i].base) {
         case UD_R_AH :
         case UD_R_CH :
+        case UD_R_DH :
             InstructionOperand fullreg;
             if (ud_obj->operand[operand_i].base == UD_R_AH)
                 fullreg = InstructionOperand(OPTYPE_VAR, 64, "UD_R_RAX");
             else if (ud_obj->operand[operand_i].base == UD_R_CH)
                 fullreg = InstructionOperand(OPTYPE_VAR, 64, "UD_R_RCX");
+            else if (ud_obj->operand[operand_i].base == UD_R_DH)
+                fullreg = InstructionOperand(OPTYPE_VAR, 64, "UD_R_RDX");
             // move value into appropriate place
             InstructionOperand tmpValue (OPTYPE_VAR, 64);
             InstructionOperand eight    (OPTYPE_CONSTANT, 8, 8);
@@ -404,11 +407,14 @@ InstructionOperand Translator :: operand (ud_t * ud_obj, int operand_i, uint64_t
         switch (ud_obj->operand[operand_i].base) {
         case UD_R_AH :
         case UD_R_CH :
+        case UD_R_DH :
             InstructionOperand fullreg;
             if (ud_obj->operand[operand_i].base == UD_R_AH)
                 fullreg = InstructionOperand(OPTYPE_VAR, 64, "UD_R_RAX");
             else if (ud_obj->operand[operand_i].base == UD_R_CH)
                 fullreg = InstructionOperand(OPTYPE_VAR, 64, "UD_R_RCX");
+            else if (ud_obj->operand[operand_i].base == UD_R_DH)
+                fullreg = InstructionOperand(OPTYPE_VAR, 64, "UD_R_RDX");
             InstructionOperand rh    (OPTYPE_VAR, 8);
             InstructionOperand eight (OPTYPE_CONSTANT, 8, 8);
             instructions.push_back(new InstructionShr(address, size, rh, fullreg, eight));

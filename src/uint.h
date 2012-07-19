@@ -43,18 +43,18 @@ class UInt {
         std::string str      () const;
         int         g_bits   () const { return bits; }
 
-        UInt operator +  (const UInt &) const;
-        UInt operator -  (const UInt &) const;
-        UInt operator *  (const UInt &) const;
-        UInt operator /  (const UInt &) const;
-        UInt operator %  (const UInt &) const;
-        UInt operator &  (const UInt &) const;
-        UInt operator ^  (const UInt &) const;
-        UInt operator |  (const UInt &) const;
-        UInt operator << (const UInt &) const;
-        UInt operator >> (const UInt &) const;
+        const UInt operator +  (const UInt &) const;
+        const UInt operator -  (const UInt &) const;
+        const UInt operator *  (const UInt &) const;
+        const UInt operator /  (const UInt &) const;
+        const UInt operator %  (const UInt &) const;
+        const UInt operator &  (const UInt &) const;
+        const UInt operator ^  (const UInt &) const;
+        const UInt operator |  (const UInt &) const;
+        const UInt operator << (const UInt &) const;
+        const UInt operator >> (const UInt &) const;
 
-        UInt operator ~  () const;
+        const UInt operator ~  () const;
 
         bool operator <  (const UInt &) const;
         bool operator >  (const UInt &) const;

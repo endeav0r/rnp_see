@@ -64,7 +64,9 @@ __int128_t UInt :: g_svalue128 () const
     case 64  : return (int64_t) value;
     case 128 : return (__int128_t) value;
     }
-    throw std::runtime_error("invalid number of bits to UInt :: g_svalue()");
+    std::stringstream ss;
+    ss << "invalid number of bits to UInt :: g_svalue() => " << bits;
+    throw std::runtime_error(ss.str());
     return 0;
 }
 
@@ -101,7 +103,7 @@ std::string UInt :: str () const
 }
 
 #define UINTOPERATOR(OPER) \
-UInt UInt :: operator OPER (const UInt & rhs) const \
+const UInt UInt :: operator OPER (const UInt & rhs) const \
 { \
     UInt result(this->bits); \
     result.value = this->g_value128() OPER rhs.g_value128(); \
@@ -119,7 +121,7 @@ UINTOPERATOR(|)
 UINTOPERATOR(<<)
 UINTOPERATOR(>>)
 
-UInt UInt :: operator ~ () const
+const UInt UInt :: operator ~ () const
 {
     return UInt(this->bits, ~(this->value));
 }

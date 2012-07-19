@@ -28,6 +28,7 @@ class Page {
         uint8_t * data;
         size_t size;
         Page * parent;
+        int references;
         
         void check_offset (size_t offset, size_t bytes);
         
@@ -39,6 +40,7 @@ class Page {
         Page * make_child ();
         
         void set_parent (Page * parent);
+        void reference  ();
         
         void resize (size_t new_size);
 

@@ -1,6 +1,6 @@
 CPP=g++
 CFLAGS=-Wall -O2 -g --std=c++0x -Wno-switch
-LIBS=-L/usr/local/lib -ludis86
+LIBS=-L/usr/local/lib -ludis86 -lz3
 
 _OBJS = translator.o debug.o elf.o instruction.o kernel.o lx86.o memory.o \
        page.o symbolicvalue.o uint.o vm.o
@@ -23,10 +23,14 @@ test_vm : $(OBJS) src/test/test_vm.cc
 test_memory : $(OBJS) src/test/test_memory.cc
 	$(CPP) -o test_memory src/test/test_memory.cc $(OBJS) $(CFLAGS) $(LIBS)
 
-tests : test_vm test_memory
+test_symbolicvalue : $(OBJS) src/test/test_symbolicvalue.cc
+	$(CPP) -o test_symbolicvalue src/test/test_symbolicvalue.cc $(OBJS) $(CFLAGS) $(LIBS)
+
+tests : test_vm test_memory test_symbolicvalue
 
 clean :
 	rm -f $(SRCDIR)/*.o
 	rm -f see
 	rm -f test_vm
 	rm -f test_memory
+	rm -f test_symbolicvalue

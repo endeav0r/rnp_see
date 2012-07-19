@@ -24,6 +24,7 @@
 #include <sstream>
 
 //#define DEBUG
+#define DEBUGSYM
 
 void Memory :: destroy ()
 {
@@ -51,6 +52,11 @@ void Memory :: destroy ()
 Memory Memory :: copy ()
 {
     dirty.clear();
+
+    std::map <uint64_t, Page *> :: iterator it;
+    for (it = pages.begin(); it != pages.end(); it++) {
+        it->second->reference();
+    }
 
     return Memory(pages);
 }
@@ -108,8 +114,12 @@ void Memory :: s_data (uint64_t address, const uint8_t * data, size_t size)
 
 SymbolicValue Memory :: g_sym8 (uint64_t address)
 {
-    if (symbolic_memory.count(address) > 0)
+    if (symbolic_memory.count(address) > 0) {
+        #ifdef DEBUGSYM
+        std::cerr << "reading symbolic byte at " << std::hex << address << std::endl;
+        #endif
         return symbolic_memory[address];
+    }
     return SymbolicValue(8, g_byte(address));
 }
 
@@ -127,14 +137,19 @@ SymbolicValue Memory :: g_sym32 (uint64_t address)
 
 SymbolicValue Memory :: g_sym64 (uint64_t address)
 {
+    std::cout << "g_sym64" << std::endl;
     return (g_sym32(address + 4).extend(64) << SymbolicValue(8, 32))
            | g_sym32(address).extend(64);
 }
 
 void Memory :: s_sym8 (uint64_t address, SymbolicValue value)
 {
-    if (value.g_wild())
+    if (value.g_wild()) {
+        #ifdef DEBUGSYM
+        std::cerr << "setting symbolic value at " << std::hex << address << std::endl;
+        #endif
         symbolic_memory[address] = value & SymbolicValue(8, 0xff);
+    }
     else
         s_byte(address, value.g_uint64() & 0xff);
 }

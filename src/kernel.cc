@@ -44,6 +44,7 @@ void Kernel :: syscall (std::map <uint64_t, SymbolicValue> & variables, Memory &
         throw std::runtime_error("syscall called with wild rax");
 
     switch (rax.g_uint64()) {
+        case 0x0  : sys_read   (variables, memory); break;
         case 0x1  : sys_write  (variables, memory); break;
         case 0x5  : sys_fstat  (variables, memory); break;
         case 0x9  : sys_mmap   (variables, memory); break;
@@ -56,6 +57,38 @@ void Kernel :: syscall (std::map <uint64_t, SymbolicValue> & variables, Memory &
             ss << "unhandled syscall: " << rax.str();
             throw std::runtime_error(ss.str());
     }
+}
+
+
+void Kernel :: sys_read (std::map <uint64_t, SymbolicValue> & variables, Memory & memory)
+{
+    SymbolicValue rdi = variables[InstructionOperand::str_to_id("UD_R_RDI")];
+    SymbolicValue rsi = variables[InstructionOperand::str_to_id("UD_R_RSI")];
+    SymbolicValue rdx = variables[InstructionOperand::str_to_id("UD_R_RDX")];
+
+    if (rsi.g_wild())
+        throw std::runtime_error("SYS_READ with symbolic destination");
+    if (rdi.g_wild())
+        throw std::runtime_error("SYS_READ with symbolic file descriptor");
+    if (rdx.g_wild())
+        throw std::runtime_error("SYS_READ with symbolic input length");
+
+    // read from stdin
+    if (rdi.g_uint64() == 0) {
+        // return 1 wild symbolic byte
+        memory.s_sym8(rsi.g_uint64(), SymbolicValue(8));
+        variables[InstructionOperand::str_to_id("UD_R_RAX")] = SymbolicValue(64, 1);
+    }
+    else
+        throw std::runtime_error("SYS_READ currently only supports stdin");
+
+    #ifdef DEBUG
+    std::cerr << "SYS_READ rdi=" << rdi.str() << ", "
+              << "rsi=" << rsi.str() << ", "
+              << "rdx=" << rdx.str() << ", "
+              << "result_rax=" << variables[InstructionOperand::str_to_id("UD_R_RAX")].str()
+              << std::endl;
+    #endif
 }
 
 

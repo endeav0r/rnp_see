@@ -70,29 +70,31 @@ int main (int argc, char * argv[])
         return -1;
     }
 
-    VM * vm;
-    if (loader_type == 1)
-        vm = new VM(new Lx86(argv[optind]), true);
-    else
-        vm = new VM(Elf::Get(argv[optind]), true);
+    VM vm;
+    if (loader_type == 1) {
+        VM lxvm(new Lx86(argv[optind]), false);
+        vm.copy(lxvm);
+    }
+    else {
+        VM elfvm(Elf::Get(argv[optind]), false);
+        vm.copy(elfvm);
+    }
 
     std::cout << std::endl;
 
     while (true) {
         int c = getc(stdin);
-        if (c == 'a') { while (true) vm->step(); }
-        if (c == 'd') { for (int i = 0; i < 8; i++) vm->step(); }
-        if (c == 'f') { for (int i = 0; i < 16; i++) vm->step(); }
-        if (c == 'g') { for (int i = 0; i < 128; i++) vm->step(); }
-        if (c == 'h') { for (int i = 0; i < 1024; i++) vm->step(); }
+        if (c == 'a') { while (true) vm.step(); }
+        if (c == 'd') { for (int i = 0; i < 8; i++) vm.step(); }
+        if (c == 'f') { for (int i = 0; i < 16; i++) vm.step(); }
+        if (c == 'g') { for (int i = 0; i < 128; i++) vm.step(); }
+        if (c == 'h') { for (int i = 0; i < 1024; i++) vm.step(); }
         if (c == 'q') break;
-        if (c == 'r') vm->debug_x86_registers();
-        if (c == 's') vm->step();
-        if (c == 't') { for (int i = 0; i < 500; i++) vm->step(); break; }
-        if (c == 'v') vm->debug_variables();
+        if (c == 'r') vm.debug_x86_registers();
+        if (c == 's') vm.step();
+        if (c == 't') { for (int i = 0; i < 500; i++) vm.step(); break; }
+        if (c == 'v') vm.debug_variables();
     }
-
-    delete vm;
 
     return 0;
 }

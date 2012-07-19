@@ -28,19 +28,21 @@
 
 Page :: Page (size_t size)
 {
-    this->size = size;
-    this->data = new uint8_t [size];
-    this->parent = NULL;
+    this->size       = size;
+    this->data       = new uint8_t [size];
+    this->parent     = NULL;
+    this->references = 1;
 
     memset(this->data, 0, size);
 }
 
 Page :: Page (size_t size, uint8_t * data)
 {
-    this->size = size;
-    this->data = new uint8_t [size];
+    this->size       = size;
+    this->data       = new uint8_t [size];
+    this->parent     = NULL;
+    this->references = 1;
     memcpy(this->data, data, size);
-    this->parent = NULL;
 }
 
 Page * Page :: destroy ()
@@ -49,17 +51,27 @@ Page * Page :: destroy ()
     std::cerr << "Page::destroy()" << std::endl;
     #endif
 
-    delete[] data;
-    Page * result = this->parent;
-    delete this;
-    return result;
+    if (--references == 0) {
+        delete[] data;
+        Page * result = this->parent;
+        delete this;
+        return result;
+    }
+    else
+        return this->parent;
 }
 
 Page * Page :: make_child ()
 {
     Page * child = new Page(size, data);
     child->set_parent(this);
+    reference();
     return child;
+}
+
+void Page :: reference ()
+{
+    references++;
 }
 
 void Page :: check_offset (size_t offset, size_t bytes)

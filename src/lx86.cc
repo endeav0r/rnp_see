@@ -164,7 +164,7 @@ Memory Lx86 :: g_memory ()
         if (bytes_read != end - start) {
             throw std::runtime_error("error on Lx86::g_memory read");
         }
-
+        
         // create new page from buf
         pages[start] = new Page(end - start, buf);
         delete[] buf;

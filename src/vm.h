@@ -74,6 +74,8 @@ class VM {
         VM () : loader(NULL), delete_loader(false) { delete_loader = false; }
         ~VM ();
 
+        void copy (VM & rhs);
+
         void step ();
 
         SymbolicValue g_variable (uint64_t identifier);

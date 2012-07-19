@@ -140,6 +140,18 @@ VM :: ~VM ()
 }
 
 
+void VM :: copy (VM & rhs)
+{
+    ip_id         = rhs.ip_id;
+    loader        = rhs.loader;
+    kernel        = rhs.kernel;
+    translator    = rhs.translator;
+    delete_loader = false;
+    variables     = rhs.variables;
+    memory        = rhs.memory.copy();
+}
+
+
 void VM :: step ()
 {
     uint64_t ip_addr = variables[ip_id].g_uint64();
@@ -147,11 +159,9 @@ void VM :: step ()
 
     // if there is a symbol name for this location, print it out
     // this code is very slow
-    /*
     std::string symbol_name = loader->func_symbol(variables[ip_id].g_uint64());
     if (symbol_name != "")
         std::cout << "SYMBOL: " << symbol_name << " :" << std::endl;
-    */
 
     instructions = translator.translate(ip_addr,
                                         memory.g_data(ip_addr),
@@ -173,7 +183,7 @@ void VM :: step ()
 
     std::list <Instruction *> :: iterator it;
     for (it = instructions.begin(); it != instructions.end(); it++) {
-        //std::cout << (*it)->str() << std::endl;
+        std::cout << (*it)->str() << std::endl;
              EXECUTE(InstructionAdd)
         else EXECUTE(InstructionAnd)
         else EXECUTE(InstructionAssign)
