@@ -25,3 +25,10 @@ Translator :: *
 Update the README
 
 Catch malloc errors (new), especially in page.cc
+
+VM :: execute (InstructionHlt * hlt)
+    vm needs to remove itself from engine on hlt
+
+z3::expr z3sext()
+    I believe Z3_mk_sign_ext will extend the target by the number of
+    bits given, not to the number of bits given. needs to be fixed.

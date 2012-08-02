@@ -106,12 +106,23 @@ void VM :: init ()
     #endif
     ip_id      = loader->g_ip_id();
 
-    std::cout << "Memory mmap: " << std::endl << memory.memmap() << std::endl;
+    //std::cout << "Memory mmap: " << std::endl << memory.memmap() << std::endl;
 }
 
 
 VM :: VM (Loader * loader)
 {
+    this->engine = NULL;
+    this->loader = loader;
+    delete_loader = false;
+
+    init();
+}
+
+
+VM :: VM (Loader * loader, Engine * engine)
+{
+    this->engine = engine;
     this->loader = loader;
     delete_loader = false;
 
@@ -121,6 +132,7 @@ VM :: VM (Loader * loader)
 
 VM :: VM (Loader * loader, bool delete_loader)
 {
+    this->engine = NULL;
     this->loader = loader;
     this->delete_loader = delete_loader;
 
@@ -128,14 +140,23 @@ VM :: VM (Loader * loader, bool delete_loader)
 }
 
 
+VM :: VM (Loader * loader,
+          std::list <std::pair<SymbolicValue, SymbolicValue>> assertions)
+{
+    this->engine = NULL;
+    this->loader = loader;
+    this->delete_loader = false;
+    this->assertions = assertions;
+
+    init();
+}
+
+
 VM :: ~VM ()
 {
-    std::cerr << "~VM ";
     if (delete_loader == true) {
-        std::cerr << "delete_loader";
         //delete loader;
     }
-    std::cerr << std::endl;
     memory.destroy();
 }
 
@@ -149,6 +170,24 @@ void VM :: copy (VM & rhs)
     delete_loader = false;
     variables     = rhs.variables;
     memory        = rhs.memory.copy();
+    engine        = rhs.engine;
+}
+
+
+VM * VM :: new_copy ()
+{
+    VM * child = new VM();
+
+    child->ip_id         = ip_id;
+    child->loader        = loader;
+    child->kernel        = kernel;
+    child->translator    = translator;
+    child->delete_loader = false;
+    child->variables     = variables;
+    child->memory        = memory.copy();
+    child->engine        = engine;
+
+    return child;   
 }
 
 
@@ -159,9 +198,10 @@ void VM :: step ()
 
     // if there is a symbol name for this location, print it out
     // this code is very slow
-    std::string symbol_name = loader->func_symbol(variables[ip_id].g_uint64());
+    std::string symbol_name = loader->func_symbol(ip_addr);
     if (symbol_name != "")
-        std::cout << "SYMBOL: " << symbol_name << " :" << std::endl;
+        std::cout << std::hex << ip_addr 
+                  << "SYMBOL: " << symbol_name << " :" << std::endl;
 
     instructions = translator.translate(ip_addr,
                                         memory.g_data(ip_addr),
@@ -169,12 +209,14 @@ void VM :: step ()
 
     size_t instruction_size = instructions.front()->g_size();
 
-    std::cout << "step IP=" << std::hex << ip_addr
-             << " " << translator.native_asm((uint8_t *) memory.g_data(ip_addr), instruction_size);
-    for (size_t i = 0; i < instruction_size; i++) {
-        std::cout << " " << std::hex << (int) memory.g_byte(ip_addr + i);
-    }
-    std::cout << std::endl;
+    #ifdef DEBUG
+        std::cout << "step IP=" << std::hex << ip_addr
+                 << " " << translator.native_asm((uint8_t *) memory.g_data(ip_addr), instruction_size);
+        for (size_t i = 0; i < instruction_size; i++) {
+            std::cout << " " << std::hex << (int) memory.g_byte(ip_addr + i);
+        }
+        std::cout << std::endl;
+    #endif
 
     variables[ip_id] = variables[ip_id] + SymbolicValue(64, instruction_size);
 
@@ -183,7 +225,9 @@ void VM :: step ()
 
     std::list <Instruction *> :: iterator it;
     for (it = instructions.begin(); it != instructions.end(); it++) {
-        std::cout << (*it)->str() << std::endl;
+        #ifdef DEBUG
+            //std::cout << (*it)->str() << std::endl;
+        #endif
              EXECUTE(InstructionAdd)
         else EXECUTE(InstructionAnd)
         else EXECUTE(InstructionAssign)
@@ -194,6 +238,7 @@ void VM :: step ()
         else EXECUTE(InstructionCmpLts)
         else EXECUTE(InstructionCmpLtu)
         else EXECUTE(InstructionDiv)
+        else EXECUTE(InstructionHlt)
         else EXECUTE(InstructionLoad)
         else EXECUTE(InstructionNot)
         else EXECUTE(InstructionMod)
@@ -236,8 +281,49 @@ void VM :: execute (InstructionAssign * assign)
 void VM :: execute (InstructionBrc * brc)
 {
     const SymbolicValue condition = g_value(brc->g_cond());
-    if (condition.g_wild())
-        throw std::runtime_error("symbolic brc not yet supported");
+    if (condition.g_wild()) {
+        // we need engine to be set in order to handle wild conditions
+        if (engine == NULL)
+            throw std::runtime_error("wild condition called on VM with no Engine");
+
+        #ifdef DEBUG
+            std::cerr << "wild condition: " << condition.str() << std::endl;
+        #endif
+
+        bool condition_true  = false;
+        bool condition_false = false;
+        
+        if (condition.sv_assert(SymbolicValue(1, 1), assertions))
+            condition_true  = true;
+        if (condition.sv_assert(SymbolicValue(1, 0), assertions))
+            condition_false = true;
+
+
+        // if both conditions possible, we'll make a copy for the false branch
+        // and set the assertion for the true branch for this VM
+        if (condition_true && condition_false) {
+            std::cout << "condition_true && condition_false" << std::endl;
+            VM * newvm = new_copy();
+            std::pair <SymbolicValue, SymbolicValue>
+                assert_false(condition, SymbolicValue(1, 0));
+            newvm->assertions.push_back(assert_false);
+            engine->push_vm(newvm);
+        }
+        else if (condition_false) {
+            std::cout << "condition_false" << std::endl;
+            std::pair <SymbolicValue, SymbolicValue>
+                assert_false(condition, SymbolicValue(1, 0));
+            assertions.push_back(assert_false);
+        }
+        else
+            std::cout << "condition_true" << std::endl;
+        if (condition_true) {
+            std::pair <SymbolicValue, SymbolicValue>
+                assert_true(condition, SymbolicValue(1, 1));
+            assertions.push_back(assert_true);
+            variables[ip_id] = g_value(brc->g_dst()).extend(variables[ip_id].g_bits());
+        }
+    }
     else if (condition.g_uint64()) {
         variables[ip_id] = g_value(brc->g_dst()).extend(variables[ip_id].g_bits());
     }
@@ -283,6 +369,12 @@ void VM :: execute (InstructionDiv * div)
 {
     variables[div->g_dst().g_id()] = (g_value(div->g_lhs())
                                       / g_value(div->g_rhs())).extend(div->g_dst().g_bits());
+}
+
+
+void VM :: execute (InstructionHlt * hlt)
+{
+    engine->remove_vm(this);
 }
 
 
@@ -359,7 +451,7 @@ void VM :: execute (InstructionSignExtend * sext)
     // force src variable to be the src size
     SymbolicValue src = g_value(sext->g_src()).extend(sext->g_src().g_bits());
     // now sign extend this value to the dst's size
-    SymbolicValue dst = src.signExtend(sext->g_dst().g_bits());
+    const SymbolicValue dst = src.signExtend(sext->g_dst().g_bits());
     variables[sext->g_dst().g_id()] = dst;
 }
 

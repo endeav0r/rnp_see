@@ -22,6 +22,7 @@
 
 #include <inttypes.h>
 
+#include <list>
 #include <iostream>
 #include <string>
 
@@ -92,7 +93,7 @@ class SymbolicValue {
         SymbolicValue & operator = (const SymbolicValue & rhs) const;
         SymbolicValue & operator = (SymbolicValue & rhs) const;
         
-        virtual const std::string str () const;
+        const std::string str () const;
 
         const SymbolicValue extend      (int bits) const;
         const SymbolicValue signExtend  (int bits) const;
@@ -123,11 +124,14 @@ class SymbolicValue {
 
         // creates a z3 expression which evaluates this SymbolicValue in the
         // given z3 context
-        virtual z3::expr context    (z3::context & c) const;
-        virtual z3::expr contextCmp (z3::context & c, z3::expr && cond) const;
+        z3::expr extend     (z3::expr expr, int target_size) const;
+        z3::expr context    (z3::context & c) const;
+        z3::expr contextCmp (z3::context & c, z3::expr && cond) const;
 
         // asserts a wild symbolic value can equal the given value
-        virtual bool svassert (const SymbolicValue & value);
+        bool sv_assert (const SymbolicValue && value) const;
+        bool sv_assert (const SymbolicValue && value,
+                        std::list <std::pair <SymbolicValue, SymbolicValue>>) const;
 };
 
 

@@ -81,10 +81,11 @@ SymbolicValue :: SymbolicValue (int type,
 
 SymbolicValue :: ~SymbolicValue ()
 {
-    if (lhs != NULL)
-        delete lhs;
-    if (rhs != NULL)
-        delete rhs;
+    //std::cerr << "destructor for " << str() << std::endl;
+    //if (lhs != NULL)
+        //delete lhs;
+    //if (rhs != NULL)
+        //delete rhs;
 }
 
 SymbolicValue & SymbolicValue :: operator = (const SymbolicValue & rhs)
@@ -106,8 +107,8 @@ SymbolicValue & SymbolicValue :: operator = (const SymbolicValue & rhs)
     if (rhs.lhs) {
         this->lhs = new SymbolicValue();
         this->rhs = new SymbolicValue();
-        *(this->lhs) = *(rhs.lhs);
-        *(this->rhs) = *(rhs.rhs);
+        *(this->lhs) = (const SymbolicValue) *(rhs.lhs);
+        *(this->rhs) = (const SymbolicValue) *(rhs.rhs);
     }
     else {
         this->lhs = NULL;
@@ -116,13 +117,13 @@ SymbolicValue & SymbolicValue :: operator = (const SymbolicValue & rhs)
     
     return *this;
 }
-
+/*
 SymbolicValue & SymbolicValue :: operator = (SymbolicValue & rhs)
 {
     *this = (const SymbolicValue) rhs;
     return *this;
 }
-
+*/
 const std::string SymbolicValue :: str () const
 {
     std::stringstream ss;
@@ -138,7 +139,7 @@ const std::string SymbolicValue :: str () const
         ss << "~(" << lhs->str() << ")";
     }
     else {
-        ss << "(" << lhs->str();
+        ss << "(" << g_bits() << " " << lhs->str();
         switch (type) {
         case SVT_ADD    : ss << " + "; break;
         case SVT_AND    : ss << " & "; break;
@@ -326,29 +327,58 @@ z3::expr SymbolicValue :: contextCmp (z3::context & c, z3::expr && cond) const
     else return c.bv_val(0, g_bits());
 }
 
+z3::expr SymbolicValue :: extend (z3::expr expr, int target_size) const
+{
+    int expr_size = expr.get_sort().bv_size();
+
+    if (expr_size < target_size) {
+        return to_expr(expr.ctx(), Z3_mk_zero_ext(expr.ctx(), target_size - expr_size, expr));
+    }
+    else if (expr_size > target_size) {
+
+    }
+    return expr;
+}
+
 z3::expr SymbolicValue :: context (z3::context & c) const
 {
     switch (type) {
-    case SVT_ADD    : return lhs->context(c) + rhs->context(c);
-    case SVT_AND    : return lhs->context(c) & rhs->context(c);
-    case SVT_CMPLES : return contextCmp(c,     lhs->context(c) <= rhs->context(c));
-    case SVT_CMPLEU : return contextCmp(c, ule(lhs->context(c),   rhs->context(c)));
-    case SVT_CMPLTS : return contextCmp(c,     lhs->context(c) <  rhs->context(c));
-    case SVT_CMPLTU : return contextCmp(c, ult(lhs->context(c),   rhs->context(c)));
-    case SVT_DIV    : return lhs->context(c) / rhs->context(c);
-    case SVT_EQ     : return contextCmp(c,     lhs->context(c) == rhs->context(c));
-    case SVT_MOD    : return z3mod(lhs->context(c), rhs->context(c));
-    case SVT_MUL    : return lhs->context(c) * rhs->context(c);
-    case SVT_NOT    : return ~(lhs->context(c));
-    case SVT_OR     : return lhs->context(c) | rhs->context(c);
+    case SVT_ADD    :
+        return extend(lhs->context(c) + rhs->context(c), g_bits());
+    case SVT_AND    :
+        return extend(lhs->context(c) & rhs->context(c), g_bits());
+    case SVT_CMPLES :
+        return extend(contextCmp(c, lhs->context(c) <= rhs->context(c)), g_bits());
+    case SVT_CMPLEU :
+        return extend(contextCmp(c, ule(lhs->context(c), rhs->context(c))), g_bits());
+    case SVT_CMPLTS :
+        return extend(contextCmp(c, lhs->context(c) < rhs->context(c)), g_bits());
+    case SVT_CMPLTU :
+        return extend(contextCmp(c, ult(lhs->context(c), rhs->context(c))), g_bits());
+    case SVT_DIV    :
+        return extend(lhs->context(c) / rhs->context(c), g_bits());
+    case SVT_EQ     :
+        return extend(contextCmp(c, lhs->context(c) == rhs->context(c)), g_bits());
+    case SVT_MOD    :
+        return extend(z3mod(lhs->context(c), rhs->context(c)), g_bits());
+    case SVT_MUL    :
+        return extend(lhs->context(c) * rhs->context(c), g_bits());
+    case SVT_NOT    :
+        return extend(~(lhs->context(c)), g_bits());
+    case SVT_OR     :
+        return extend(lhs->context(c) | rhs->context(c), g_bits());
     case SVT_SEXT   :
         if (rhs->g_wild())
             throw std::runtime_error("tried to sign-extend by wild bits");
         return z3sext(lhs->context(c), rhs->g_uint64());
-    case SVT_SHL    : return z3shl(lhs->context(c), rhs->context(c));
-    case SVT_SHR    : return z3shr(lhs->context(c), rhs->context(c));
-    case SVT_SUB    : return lhs->context(c) - rhs->context(c);
-    case SVT_XOR    : return lhs->context(c) | rhs->context(c);
+    case SVT_SHL    :
+        return extend(z3shl(lhs->context(c), rhs->context(c)), g_bits());
+    case SVT_SHR    :
+        return extend(z3shr(lhs->context(c), rhs->context(c)), g_bits());
+    case SVT_SUB    :
+        return extend(lhs->context(c) - rhs->context(c), g_bits());
+    case SVT_XOR    :
+        return extend(lhs->context(c) | rhs->context(c), g_bits());
     }
 
     if (not wild) {
@@ -367,7 +397,7 @@ z3::expr SymbolicValue :: context (z3::context & c) const
 }
 
 
-bool SymbolicValue :: svassert (const SymbolicValue & value) {
+bool SymbolicValue :: sv_assert (const SymbolicValue && value) const {
     z3::context c;
 
     z3::expr this_value   = context(c);
@@ -376,8 +406,29 @@ bool SymbolicValue :: svassert (const SymbolicValue & value) {
     z3::solver s(c);
     s.add(this_value == target_value);
 
-    s.check();
-
     if (s.check() == z3::sat) return true;
     return false;
+}
+
+// drunk coding leads to regrets, but FOSS so what the hell
+bool SymbolicValue :: sv_assert (const SymbolicValue && value,
+                                std::list <std::pair <SymbolicValue, SymbolicValue>> assertions)
+const
+{
+    z3::context c;
+
+    z3::expr this_value   = context(c);
+    z3::expr target_value = value.context(c);
+
+    z3::solver s(c);
+
+    std::list <std::pair <SymbolicValue, SymbolicValue>> :: iterator it;
+    for (it = assertions.begin(); it != assertions.end(); it++) {
+        s.add(it->first.context(c) == it->second.context(c));
+    }
+
+    s.add(this_value == target_value);
+
+    if (s.check() == z3::sat) return true;
+    else return false;
 }

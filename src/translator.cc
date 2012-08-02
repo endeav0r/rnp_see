@@ -818,11 +818,7 @@ void Translator :: cmp (ud_t * ud_obj, uint64_t address)
     InstructionOperand tmp0s       (OPTYPE_CONSTANT, tmp0.g_bits(), 0);
 
     InstructionOperand sext (OPTYPE_VAR, lhs.g_bits());
-    if (ud_obj->operand[1].type == UD_OP_IMM) {
-        instructions.push_back(new InstructionSignExtend(address, size, sext, rhs));
-    }
-    else
-        sext = rhs;
+    instructions.push_back(new InstructionSignExtend(address, size, sext, rhs));
     
     instructions.push_back(new InstructionCmpLtu(address, size, CF,          lhs, sext));
     instructions.push_back(new InstructionCmpLeu(address, size, CForZF,      lhs, sext));

@@ -137,7 +137,6 @@ SymbolicValue Memory :: g_sym32 (uint64_t address)
 
 SymbolicValue Memory :: g_sym64 (uint64_t address)
 {
-    std::cout << "g_sym64" << std::endl;
     return (g_sym32(address + 4).extend(64) << SymbolicValue(8, 32))
            | g_sym32(address).extend(64);
 }

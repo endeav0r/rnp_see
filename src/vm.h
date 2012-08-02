@@ -20,17 +20,23 @@
 #ifndef vm_HEADER
 #define vm_HEADER
 
+class VM;
+
 #include "elf.h"
+#include "engine.h"
 #include "kernel.h"
 #include "memory.h"
 #include "symbolicvalue.h"
 #include "translator.h"
 
+#include <list>
 #include <map>
 
 class VM {
     private :
         uint64_t   ip_id;
+
+        Engine *   engine; // who's your daddy
 
         Loader *   loader;
         Kernel     kernel;
@@ -38,43 +44,49 @@ class VM {
         Translator translator;
         bool       delete_loader;
 
+        std::list <std::pair<SymbolicValue, SymbolicValue>> assertions;
         std::map <uint64_t, SymbolicValue> variables;
 
         const SymbolicValue g_value (InstructionOperand operand);
 
         void init ();
 
-        void execute (InstructionAdd    *    );
-        void execute (InstructionAnd    *    );
-        void execute (InstructionAssign *    );
-        void execute (InstructionBrc    *    );
-        void execute (InstructionCmpEq  *    );
-        void execute (InstructionCmpLes *    );
-        void execute (InstructionCmpLeu *    );
-        void execute (InstructionCmpLts *    );
-        void execute (InstructionCmpLtu *    );
-        void execute (InstructionDiv    *    );
-        void execute (InstructionLoad   *    );
-        void execute (InstructionMod    *    );
-        void execute (InstructionMul    *    );
-        void execute (InstructionNot    *    );
-        void execute (InstructionOr     *    );
-        void execute (InstructionShl    *    );
-        void execute (InstructionShr    *    );
+        void execute (InstructionAdd        *);
+        void execute (InstructionAnd        *);
+        void execute (InstructionAssign     *);
+        void execute (InstructionBrc        *);
+        void execute (InstructionCmpEq      *);
+        void execute (InstructionCmpLes     *);
+        void execute (InstructionCmpLeu     *);
+        void execute (InstructionCmpLts     *);
+        void execute (InstructionCmpLtu     *);
+        void execute (InstructionDiv        *);
+        void execute (InstructionHlt        *);
+        void execute (InstructionLoad       *);
+        void execute (InstructionMod        *);
+        void execute (InstructionMul        *);
+        void execute (InstructionNot        *);
+        void execute (InstructionOr         *);
+        void execute (InstructionShl        *);
+        void execute (InstructionShr        *);
         void execute (InstructionSignExtend *);
-        void execute (InstructionStore  *    );
-        void execute (InstructionSub    *    );
-        void execute (InstructionSyscall *   );
-        void execute (InstructionXor    *    );
-        void execute (Instruction * instruction);
+        void execute (InstructionStore      *);
+        void execute (InstructionSub        *);
+        void execute (InstructionSyscall    *);
+        void execute (InstructionXor        *);
+        void execute (Instruction           *);
 
     public :
         VM (Loader * loader);
+        VM (Loader * loader, Engine * engine);
         VM (Loader * loader, bool delete_loader);
+        VM (Loader * loader,
+            std::list <std::pair<SymbolicValue, SymbolicValue>> assertions);
         VM () : loader(NULL), delete_loader(false) { delete_loader = false; }
         ~VM ();
 
         void copy (VM & rhs);
+        VM * new_copy ();
 
         void step ();
 

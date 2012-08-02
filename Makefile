@@ -1,9 +1,9 @@
 CPP=g++
 CFLAGS=-Wall -O2 -g --std=c++0x -Wno-switch
-LIBS=-L/usr/local/lib -ludis86 -lz3
+LIBS=-L/usr/local/lib -ludis86 -lz3 
 
-_OBJS = translator.o debug.o elf.o instruction.o kernel.o lx86.o memory.o \
-       page.o symbolicvalue.o uint.o vm.o
+_OBJS = translator.o debug.o elf.o engine.o instruction.o kernel.o \
+	    lx86.o memory.o page.o symbolicvalue.o uint.o vm.o
 
 SRCDIR = src
 OBJS = $(patsubst %,$(SRCDIR)/%,$(_OBJS))
